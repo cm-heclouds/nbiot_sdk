@@ -19,21 +19,23 @@ OneNET NBIOT C SDK
 3. 修改include/config.h中的配置信息，以符合自定义工程的需求
 
 ## 目录结构
-
-    nbiot_sdk
-      + include         NBIOT SDK API相关头文件
-      + platforms       平台相关的接口（include/platform.h;include/utils.h）实现
-         + posix        支持posix的系统的相关接口实现
-         + win          windows系统的相关接口实现
-      + sample          NBIOT SDK使用示例
-      + source          NBIOT SDK内部实现
-      + test            NBIOT SDK部分测试用例（基于GTest）
-      + wakaama         eclipse wakaama（https://github.com/eclipse/wakaama）
-         + core         eclipse wakaama核心实现（修改部分代码以适应平台接入需求）
-         + examples     eclipse wakaama使用示例
-         + tests        eclipse wakaama测试用例
-
+```
+nbiot_sdk
+   + include         NBIOT SDK API相关头文件
+   + platforms       平台相关的接口（include/platform.h;include/utils.h）实现
+       + posix       支持posix的系统的相关接口实现
+       + win         windows系统的相关接口实现
+   + sample          NBIOT SDK使用示例
+   + source          NBIOT SDK内部实现
+   + test            NBIOT SDK部分测试用例（基于GTest）
+   + wakaama         eclipse wakaama（https://github.com/eclipse/wakaama）
+       + core        eclipse wakaama核心实现（修改部分代码以适应平台接入需求）
+       + examples    eclipse wakaama使用示例
+       + tests       eclipse wakaama测试用例
+```
 ## 常见问题
 1. NBIOT SDK对设备内存的最低需求是多少？
-   随着数据流个数的增加，内存需求也会相应地增加
+`
+   随着数据流个数的增加，内存需求也会相应地增加
    例如：sample中对内存的需求是3kb，stack 1KB，heap 2KB
+`
