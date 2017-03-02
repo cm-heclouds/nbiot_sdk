@@ -7,10 +7,12 @@
 #define NBIOT_INClUDE_PLATFORM_H_
 
 #if defined(NBIOT_OS_WIN) || defined(NBIOT_OS_POSIX)
-#include <stddef.h>  /* for size_t */
-#include <stdint.h>  /* for integer types */
-#include <stdbool.h> /* for bool */
-#include <time.h>    /* for time_t */
+#include <stddef.h>   /* for size_t */
+#include <stdint.h>   /* for integer types */
+#include <stdbool.h>  /* for bool */
+#include <time.h>     /* for time_t */
+#include <float.h>    /* for DBL_MAX */
+#include <inttypes.h> /* fro PRId64 */
 #endif
 
 #include "config.h"
@@ -47,6 +49,12 @@ void nbiot_free( void *ptr );
  * @return 返回当前距(00:00:00 UTC, January 1, 1970)的秒数
 **/
 time_t nbiot_time( void );
+
+/**
+ * 获取当前时刻
+ * @return 返回当前时刻(毫秒)
+**/
+clock_t nbiot_tick( void );
 
 /**
  * 休眠
@@ -128,6 +136,12 @@ int nbiot_udp_recv( nbiot_socket_t    *sock,
                     size_t             size,
                     size_t            *read,
                     nbiot_sockaddr_t **src );
+
+/**
+ * 获取nbiot_sockaddr_t的结构体大小
+ * @return 返回nbiot_sockaddr_t的结构体大小
+**/
+size_t nbiot_sockaddr_size( const nbiot_sockaddr_t *addr );
 
 /**
  * 比较2个socket地址信息是否一致

@@ -13,5 +13,6 @@
 #define NBIOT_ERR_SOCKET        -4
 #define NBIOT_ERR_NO_RESOURCE   -5
 #define NBIOT_ERR_SERVER_RESET  -6
+#define NBIOT_ERR_DTLS          -7
 
 #endif /* NBIOT_INClUDE_ERROR_H_ */

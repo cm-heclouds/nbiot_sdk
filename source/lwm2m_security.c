@@ -3,7 +3,7 @@
  * All rights reserved.
 **/
 
-#include "lwm2m.h"
+#include "m2m.h"
 
 typedef struct security_t
 {
@@ -29,11 +29,11 @@ static uint8_t prv_get_value( lwm2m_data_t        *data,
             return COAP_205_CONTENT;
 
         case LWM2M_SECURITY_SECURITY_ID:
+#ifdef HAVE_DTLS
+            lwm2m_data_encode_int( LWM2M_SECURITY_MODE_RAW_PUBLIC_KEY, data );
+#else
             lwm2m_data_encode_int( LWM2M_SECURITY_MODE_NONE, data );
-            return COAP_205_CONTENT;
-
-        case LWM2M_SECURITY_SMS_SECURITY_ID:
-            lwm2m_data_encode_int( LWM2M_SECURITY_MODE_NONE, data );
+#endif
             return COAP_205_CONTENT;
 
         case LWM2M_SECURITY_SHORT_SERVER_ID:
@@ -112,7 +112,7 @@ create_security_object( uint16_t    svr_id,
         return NULL;
     }
 
-    obj = (lwm2m_object_t*)lwm2m_malloc( sizeof(lwm2m_object_t) );
+    obj = (lwm2m_object_t*)nbiot_malloc( sizeof(lwm2m_object_t) );
     if ( NULL == obj )
     {
         return NULL;
@@ -121,17 +121,17 @@ create_security_object( uint16_t    svr_id,
     nbiot_memzero( obj, sizeof(lwm2m_object_t) );
     obj->objID = LWM2M_SECURITY_OBJECT_ID;
 
-    sec = (security_t*)lwm2m_malloc( sizeof(security_t) );
+    sec = (security_t*)nbiot_malloc( sizeof(security_t) );
     if ( NULL == sec )
     {
-        lwm2m_free( obj );
+        nbiot_free( obj );
 
         return NULL;
     }
 
     nbiot_memzero( sec, sizeof(security_t) );
     sec->instid = 0;
-    sec->uri = lwm2m_strdup( svr_uri );
+    sec->uri = nbiot_strdup( svr_uri );
     sec->id = svr_id;
     sec->holdoff_time = holdoff_time;
     sec->bootstrap = bootstrap;
@@ -154,10 +154,10 @@ void clear_security_object( lwm2m_object_t *sec_obj )
 
             if ( NULL != sec->uri )
             {
-                lwm2m_free( sec->uri );
+                nbiot_free( sec->uri );
             }
 
-            lwm2m_free( sec );
+            nbiot_free( sec );
         }
     }
 }
@@ -170,7 +170,7 @@ char* get_server_uri( lwm2m_object_t *sec_obj,
     sec = (security_t*)LWM2M_LIST_FIND(sec_obj->instanceList,sec_instid);
     if ( NULL != sec )
     {
-        return lwm2m_strdup( sec->uri );
+        return nbiot_strdup( sec->uri );
     }
 
     return NULL;

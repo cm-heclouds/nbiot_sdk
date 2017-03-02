@@ -194,7 +194,7 @@ static coap_status_t handle_request(lwm2m_context_t * contextP,
     return result;
 }
 
-/* This function is an adaptation of function coap_receive() from Erbium's er-coap-13-engine.c.
+/* This function is an adaptation of function coap_receive() from Erbium's er-coap-13-engine.c[coap.h,coap.c].
  * Erbium is Copyright (c) 2013, Institute for Pervasive Computing, ETH Zurich
  * All rights reserved.
  */

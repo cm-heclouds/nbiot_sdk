@@ -3,7 +3,7 @@
  * All rights reserved.
 **/
 
-#include "lwm2m.h"
+#include "m2m.h"
 
 typedef struct resource_instance_t
 {
@@ -154,13 +154,13 @@ static uint8_t prv_set_value( lwm2m_data_t        *data,
                 return COAP_400_BAD_REQUEST;
             }
 
-            str = lwm2m_strdup( (char*)data->value.asBuffer.buffer );
+            str = nbiot_strdup( (char*)data->value.asBuffer.buffer );
             if ( NULL == str )
             {
                 return COAP_400_BAD_REQUEST;
             }
 
-            lwm2m_free( res->value.as_str.str );
+            nbiot_free( res->value.as_str.str );
             res->value.as_str.str = str;
             res->value.as_str.len = nbiot_strlen( str ) + 1;
 
@@ -190,7 +190,7 @@ static uint8_t prv_set_value( lwm2m_data_t        *data,
                 return COAP_400_BAD_REQUEST;
             }
 
-            bin = lwm2m_malloc( data->value.asBuffer.length );
+            bin = nbiot_malloc( data->value.asBuffer.length );
             if ( NULL == bin )
             {
                 return COAP_400_BAD_REQUEST;
@@ -199,7 +199,7 @@ static uint8_t prv_set_value( lwm2m_data_t        *data,
             nbiot_memmove( bin,
                            data->value.asBuffer.buffer,
                            data->value.asBuffer.length );
-            lwm2m_free( res->value.as_bin.bin );
+            nbiot_free( res->value.as_bin.bin );
             res->value.as_bin.bin = bin;
             res->value.as_bin.len = data->value.asBuffer.length;
 
@@ -382,7 +382,7 @@ int create_resource_object( lwm2m_object_t   *res_obj,
     obj_inst = (object_instance_t*)LWM2M_LIST_FIND( res_obj->instanceList, resource->instid );
     if ( NULL == obj_inst )
     {
-        obj_inst = (object_instance_t*)lwm2m_malloc( sizeof(object_instance_t) );
+        obj_inst = (object_instance_t*)nbiot_malloc( sizeof(object_instance_t) );
         if ( NULL == obj_inst )
         {
             return NBIOT_ERR_NO_MEMORY;
@@ -396,7 +396,7 @@ int create_resource_object( lwm2m_object_t   *res_obj,
     res_inst = (resource_instance_t*)LWM2M_LIST_FIND( obj_inst->resouces, resource->resid );
     if ( NULL == res_inst )
     {
-        res_inst = (resource_instance_t*)lwm2m_malloc( sizeof(resource_instance_t) );
+        res_inst = (resource_instance_t*)nbiot_malloc( sizeof(resource_instance_t) );
         if ( NULL == res_inst )
         {
             if ( !obj_inst_exist )

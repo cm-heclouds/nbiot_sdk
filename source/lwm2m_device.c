@@ -3,7 +3,7 @@
  * All rights reserved.
 **/
 
-#include "lwm2m.h"
+#include "m2m.h"
 
 typedef struct device_instance_t
 {
@@ -106,7 +106,7 @@ create_device_object( const char *serial_number )
         return NULL;
     }
 
-    obj = (lwm2m_object_t*)lwm2m_malloc( sizeof(lwm2m_object_t) );
+    obj = (lwm2m_object_t*)nbiot_malloc( sizeof(lwm2m_object_t) );
     if ( NULL == obj )
     {
         return NULL;
@@ -115,19 +115,19 @@ create_device_object( const char *serial_number )
     nbiot_memzero( obj, sizeof(lwm2m_object_t) );
     obj->objID = LWM2M_DEVICE_OBJECT_ID;
 
-    dev = (device_instance_t*)lwm2m_malloc( sizeof(device_instance_t) );
+    dev = (device_instance_t*)nbiot_malloc( sizeof(device_instance_t) );
     if ( NULL == dev )
     {
-        lwm2m_free( obj );
+        nbiot_free( obj );
 
         return NULL;
     }
 
-    str = lwm2m_strdup( serial_number );
+    str = nbiot_strdup( serial_number );
     if ( NULL == str )
     {
-        lwm2m_free( dev );
-        lwm2m_free( obj );
+        nbiot_free( dev );
+        nbiot_free( obj );
 
         return NULL;
     }
@@ -152,8 +152,8 @@ void clear_device_object( lwm2m_object_t *dev_obj )
 
         if ( NULL != dev->serial_number )
         {
-            lwm2m_free( dev->serial_number );
+            nbiot_free( dev->serial_number );
         }
-        lwm2m_free( dev );
+        nbiot_free( dev );
     }
 }

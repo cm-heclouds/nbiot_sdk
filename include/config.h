@@ -11,7 +11,7 @@
  *
  * 接收数据缓存大小
 **/
-#define NBIOT_SOCK_RECV_BUF_SIZE        256
+#define NBIOT_SOCK_RECV_BUF_SIZE        512
 
 /**
  * @def NBIOT_DEBUG

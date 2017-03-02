@@ -60,6 +60,30 @@ char* nbiot_strrchr( const char *str,
                      char        ch );
 
 /**
+ * 格式化输出字符串
+ * @return 成功返回字符串长度，否则返回负数值
+**/
+int nbiot_sprintf( char       *buffer,
+                   const char *format,
+                   ... );
+
+/**
+ * 格式化输出字符串
+ * @return 成功返回字符串长度，否则返回负数值
+**/
+int nbiot_snprintf( char       *buffer,
+                    size_t      length,
+                    const char *format,
+                    ... );
+
+/**
+ * 检查指定字符是否是space
+ * @param ch 指定字符
+ * @return 是space返回非0值，否则返回0值
+**/
+int nbiot_isspace( char ch );
+
+/**
  * 字符串转换成整数
  * @param str 源字符串
  * @return 返回整数
@@ -112,6 +136,12 @@ void nbiot_memzero( void  *mem,
  * @param format 格式化字符串
 **/
 void nbiot_printf( const char *format, ... );
+
+/**
+ * 生成随机数
+ * @return 返回随机整数
+**/
+int nbiot_rand( void );
 
 #ifdef __cplusplus
 } /* extern "C" { */

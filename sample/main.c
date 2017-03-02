@@ -5,6 +5,7 @@
 
 #include <nbiot.h>
 #include <utils.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
 
@@ -392,6 +393,9 @@ int main( int argc, char *argv[] )
         nbiot_free( at.value.as_str.str );
     } while(0);
     nbiot_clear_environment();
+
+    getchar();
+    nbiot_printf( "press enter key to exit..." );
 
     return 0;
 }

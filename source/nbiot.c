@@ -363,8 +363,6 @@ int nbiot_device_configure( nbiot_device_t *dev,
     if ( lwm2m_configure(dev->lwm2m,
                          endpoint_name,
                          auth_code,
-                         NULL,
-                         NULL,
                          dev->obj_num,
                          dev->obj_arr) )
     {
@@ -410,10 +408,21 @@ int nbiot_device_step( nbiot_device_t *dev,
                                     dev->addr );
             if ( NULL != conn )
             {
+#ifdef HAVE_DTLS
+                ret = dtls_handle_message( conn->dtls,
+                                           conn->addr,
+                                           buff,
+                                           read );
+                if ( ret != 0 )
+                {
+                    return NBIOT_ERR_DTLS;
+                }
+#else
                 lwm2m_handle_packet( dev->lwm2m,
                                      buff,
                                      read,
                                      conn );
+#endif
             }
         }
         else

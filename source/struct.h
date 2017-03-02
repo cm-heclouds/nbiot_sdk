@@ -6,7 +6,7 @@
 #ifndef NBIOT_SOURCE_STRUCT_H_
 #define NBIOT_SOURCE_STRUCT_H_
 
-#include "lwm2m.h"
+#include "m2m.h"
 #include <nbiot.h>
 
 struct nbiot_device_t

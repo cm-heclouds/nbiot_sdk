@@ -5,7 +5,9 @@
 
 #include <utils.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdarg.h>
+#include <ctype.h>
 
 int nbiot_strlen( const char *str )
 {
@@ -147,6 +149,40 @@ char* nbiot_strrchr( const char *str,
     }
 
     return NULL;
+}
+
+int nbiot_sprintf( char       *buffer,
+                   const char *format,
+                   ... )
+{
+    int ret;
+    va_list args;
+
+    va_start( args, format );
+    ret = vsprintf( buffer, format, args );
+    va_end( args );
+
+    return ret;
+}
+
+int nbiot_snprintf( char       *buffer,
+                    size_t      length,
+                    const char *format,
+                    ... )
+{
+    int ret;
+    va_list args;
+
+    va_start( args, format );
+    ret = vsnprintf( buffer, length, format, args );
+    va_end( args );
+
+    return ret;
+}
+
+int nbiot_isspace( char ch )
+{
+    return isspace( ch );
 }
 
 int nbiot_atoi( const char *str )
@@ -337,4 +373,15 @@ void nbiot_printf( const char *format, ... )
     va_start( args, format );
     vfprintf( stderr, format, args );
     va_end( args );
+}
+
+int nbiot_rand( void )
+{
+    static bool _srand = false;
+    if ( !_srand )
+    {
+        srand( time(NULL) );
+    }
+
+    return rand();
 }

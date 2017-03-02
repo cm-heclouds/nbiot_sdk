@@ -11,6 +11,6 @@ add_executable(
 
 if(MSVC)
 target_link_libraries(${PROJECT_NAME} nbiot_sdk ws2_32)
-else(MSVC)
+else()
 target_link_libraries(${PROJECT_NAME} nbiot_sdk)
-endif(MSVC)
+endif()

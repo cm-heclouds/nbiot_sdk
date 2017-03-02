@@ -20,7 +20,7 @@ target_link_libraries(
     nbiot_sdk
     ws2_32
 )
-else(WIN32)
+else()
 target_link_libraries(
     ${PROJECT_NAME}
     ${GTEST_LIBRARY}
@@ -28,4 +28,4 @@ target_link_libraries(
     nbiot_sdk
     pthread
 )
-endif(WIN32)
+endif()

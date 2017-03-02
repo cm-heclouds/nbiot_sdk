@@ -3,7 +3,7 @@
  * All rights reserved.
 **/
 
-#include "lwm2m.h"
+#include "m2m.h"
 
 typedef struct server_t
 {
@@ -109,7 +109,7 @@ create_server_object( uint16_t    svr_id,
         return NULL;
     }
 
-    obj = (lwm2m_object_t*)lwm2m_malloc( sizeof(lwm2m_object_t) );
+    obj = (lwm2m_object_t*)nbiot_malloc( sizeof(lwm2m_object_t) );
     if ( NULL == obj )
     {
         return NULL;
@@ -118,10 +118,10 @@ create_server_object( uint16_t    svr_id,
     nbiot_memzero( obj, sizeof(lwm2m_object_t) );
     obj->objID = LWM2M_SERVER_OBJECT_ID;
 
-    svr = (server_t*)lwm2m_malloc( sizeof(server_t) );
+    svr = (server_t*)nbiot_malloc( sizeof(server_t) );
     if ( NULL == svr )
     {
-        lwm2m_free( obj );
+        nbiot_free( obj );
 
         return NULL;
     }
@@ -148,7 +148,7 @@ void clear_server_object( lwm2m_object_t *svr_obj )
 
             svr = (server_t*)svr_obj->instanceList;
             svr_obj->instanceList = svr_obj->instanceList->next;
-            lwm2m_free( svr );
+            nbiot_free( svr );
         }
     }
 }
