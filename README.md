@@ -30,10 +30,8 @@ nbiot_sdk
        + dtls        dtls实现（通过tinydtls裁剪而来）
        + lwm2m       lwm2m、coap实现（通过wakaama裁剪而来）
    + test            NBIOT SDK部分测试用例（基于GTest）
+   + tinydtls        eclipse tinydtls（https://sourceforge.net/p/tinydtls/code/ci/master/tree/）
    + wakaama         eclipse wakaama（https://github.com/eclipse/wakaama）
-       + core        eclipse wakaama核心实现（修改部分代码以适应平台接入需求）
-       + examples    eclipse wakaama使用示例
-       + tests       eclipse wakaama测试用例
 ```
 ## 常见问题
 1. NBIOT SDK对设备内存的最低需求是多少？
