@@ -5,8 +5,8 @@
  *  tinydtls - https://sourceforge.net/projects/tinydtls/?source=navbar
 **/
 
-#ifndef NBIOT_SOURCE_DTLS_H_
-#define NBIOT_SOURCE_DTLS_H_
+#ifndef NBIOT_SOURCE_DTLS_DTLS_H_
+#define NBIOT_SOURCE_DTLS_DTLS_H_
 
 #include "peer.h"
 #include "alert.h"
@@ -370,4 +370,4 @@ dtls_peer_t *dtls_get_peer( const dtls_context_t *context,
 } /* extern "C" { */
 #endif
 
-#endif /* NBIOT_SOURCE_DTLS_H_ */
+#endif /* NBIOT_SOURCE_DTLS_DTLS_H_ */

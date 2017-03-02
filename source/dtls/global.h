@@ -5,8 +5,8 @@
  *  tinydtls - https://sourceforge.net/projects/tinydtls/?source=navbar
 **/
 
-#ifndef NBIOT_SOURCE_GLOBAL_H_
-#define NBIOT_SOURCE_GLOBAL_H_
+#ifndef NBIOT_SOURCE_DTLS_GLOBAL_H_
+#define NBIOT_SOURCE_DTLS_GLOBAL_H_
 
 #include <platform.h>
 
@@ -110,4 +110,4 @@ static inline int dtls_fls( unsigned int i )
 } /* extern "C" { */
 #endif
 
-#endif /* NBIOT_SOURCE_GLOBAL_H_ */
+#endif /* NBIOT_SOURCE_DTLS_GLOBAL_H_ */

@@ -5,8 +5,8 @@
  *  wakaama - https://github.com/eclipse/wakaama
 **/
 
-#ifndef NBIOT_SOURCE_COAP_H_
-#define NBIOT_SOURCE_COAP_H_
+#ifndef NBIOT_SOURCE_LWM2M_COAP_H_
+#define NBIOT_SOURCE_LWM2M_COAP_H_
 
 #include <platform.h>
 
@@ -290,4 +290,4 @@ int coap_set_payload( void       *packet,
 } /* extern "C" { */
 #endif
 
-#endif /* NBIOT_SOURCE_COAP_H_*/
+#endif /* NBIOT_SOURCE_LWM2M_COAP_H_*/

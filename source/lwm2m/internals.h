@@ -5,8 +5,8 @@
  *  wakaama - https://github.com/eclipse/wakaama
 **/
 
-#ifndef NBIOT_SOURCE_INTERNALS_H_
-#define NBIOT_SOURCE_INTERNALS_H_
+#ifndef NBIOT_SOURCE_LWM2M_INTERNALS_H_
+#define NBIOT_SOURCE_LWM2M_INTERNALS_H_
 
 #include "coap.h"
 #include "lwm2m.h"
@@ -443,4 +443,4 @@ lwm2m_server_t *utils_findBootstrapServer( lwm2m_context_t *contextP,
 } /* extern "C" { */
 #endif
 
-#endif /* NBIOT_SOURCE_INTERNALS_H_*/
+#endif /* NBIOT_SOURCE_LWM2M_INTERNALS_H_*/

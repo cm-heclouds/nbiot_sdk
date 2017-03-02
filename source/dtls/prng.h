@@ -5,8 +5,8 @@
  *  tinydtls - https://sourceforge.net/projects/tinydtls/?source=navbar
 **/
 
-#ifndef NBIOT_SOURCE_PRNG_H_
-#define NBIOT_SOURCE_PRNG_H_
+#ifndef NBIOT_SOURCE_DTLS_PRNG_H_
+#define NBIOT_SOURCE_DTLS_PRNG_H_
 
 #include <platform.h>
 #include <utils.h>
@@ -32,4 +32,4 @@ static inline int dtls_prng( unsigned char *buf,
 } /* extern "C" { */
 #endif
 
-#endif /* NBIOT_SOURCE_PRNG_H_ */
+#endif /* NBIOT_SOURCE_DTLS_PRNG_H_ */

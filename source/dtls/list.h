@@ -1,10 +1,12 @@
 /**
  * Copyright (c) 2017 China Mobile IOT.
  * All rights reserved.
+ * Reference:
+ *  tinydtls - https://sourceforge.net/projects/tinydtls/?source=navbar
 **/
 
-#ifndef NBIOT_SOURCE_LIST_H_
-#define NBIOT_SOURCE_LIST_H_
+#ifndef NBIOT_SOURCE_DTLS_LIST_H_
+#define NBIOT_SOURCE_DTLS_LIST_H_
 
 #include <platform.h>
 
@@ -137,4 +139,4 @@ static inline void* list_item_next( void *item )
 } /* extern "C" { */
 #endif
 
-#endif /* NBIOT_SOURCE_LIST_H_ */
+#endif /* NBIOT_SOURCE_DTLS_LIST_H_ */

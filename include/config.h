@@ -11,7 +11,11 @@
  *
  * 接收数据缓存大小
 **/
+#ifdef HAVE_DTLS
 #define NBIOT_SOCK_RECV_BUF_SIZE        512
+#else
+#define NBIOT_SOCK_RECV_BUF_SIZE        128
+#endif
 
 /**
  * @def NBIOT_DEBUG

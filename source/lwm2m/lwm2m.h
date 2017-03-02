@@ -5,8 +5,8 @@
  *  wakaama - https://github.com/eclipse/wakaama
 **/
 
-#ifndef NBIOT_SOURCE_LWM2M_H_
-#define NBIOT_SOURCE_LWM2M_H_
+#ifndef NBIOT_SOURCE_LWM2M_LWM2M_H_
+#define NBIOT_SOURCE_LWM2M_LWM2M_H_
 
 #include <platform.h>
 
@@ -594,4 +594,4 @@ bool lwm2m_session_is_equal( void *session1,
 } /* extern "C" { */
 #endif
 
-#endif /* NBIOT_SOURCE_LWM2M_H_*/
+#endif /* NBIOT_SOURCE_LWM2M_LWM2M_H_*/
