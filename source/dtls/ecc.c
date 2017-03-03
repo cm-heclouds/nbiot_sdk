@@ -111,7 +111,8 @@ const uint32_t ecc_g_point_y[8] =
 };
 
 
-static void setZero( uint32_t *A, const int length )
+static inline void setZero( uint32_t *A,
+                            const int length )
 {
     nbiot_memzero( A, length * sizeof(uint32_t) );
 }
@@ -119,18 +120,24 @@ static void setZero( uint32_t *A, const int length )
 /*
  * copy one array to another
 */
-static void copy( const uint32_t *from, uint32_t *to, uint8_t length )
+static inline void copy( const uint32_t *from,
+                         uint32_t       *to,
+                         uint8_t         length )
 {
     nbiot_memmove( to, from, length * sizeof(uint32_t) );
 }
 
-static int isSame( const uint32_t *A, const uint32_t *B, uint8_t length )
+static inline int isSame( const uint32_t *A,
+                          const uint32_t *B,
+                          uint8_t         length )
 {
     return !nbiot_memcmp( A, B, length * sizeof(uint32_t) );
 }
 
 /* is A greater than B? */
-static int isGreater( const uint32_t *A, const uint32_t *B, uint8_t length )
+static int isGreater( const uint32_t *A,
+                      const uint32_t *B,
+                      uint8_t         length )
 {
     int i;
     for ( i = length - 1; i >= 0; --i )
@@ -144,7 +151,10 @@ static int isGreater( const uint32_t *A, const uint32_t *B, uint8_t length )
 }
 
 
-static int fieldAdd( const uint32_t *x, const uint32_t *y, const uint32_t *reducer, uint32_t *result )
+static int fieldAdd( const uint32_t *x, 
+                     const uint32_t *y,
+                     const uint32_t *reducer,
+                     uint32_t       *result )
 {
     if ( add( x, y, result, ECC_ARRAY_LENGTH ) )
     { /* add prime if carry is still set! */
@@ -156,7 +166,10 @@ static int fieldAdd( const uint32_t *x, const uint32_t *y, const uint32_t *reduc
     return 0;
 }
 
-static int fieldSub( const uint32_t *x, const uint32_t *y, const uint32_t *modulus, uint32_t *result )
+static int fieldSub( const uint32_t *x,
+                     const uint32_t *y,
+                     const uint32_t *modulus,
+                     uint32_t       *result )
 {
     if ( sub( x, y, result, ECC_ARRAY_LENGTH ) )
     { /* add modulus if carry is set */
@@ -559,11 +572,11 @@ void static ec_add( const uint32_t *px,
     fieldSub( tempC, qy, ecc_prime_m, Sy );
 }
 
-void ecc_ec_mult( const uint32_t *px,
-                  const uint32_t *py,
-                  const uint32_t *secret,
-                  uint32_t       *resultx,
-                  uint32_t       *resulty )
+static void ecc_ec_mult( const uint32_t *px,
+                         const uint32_t *py,
+                         const uint32_t *secret,
+                         uint32_t       *resultx,
+                         uint32_t       *resulty )
 {
     uint32_t Qx[8];
     uint32_t Qy[8];
@@ -588,6 +601,15 @@ void ecc_ec_mult( const uint32_t *px,
     }
     copy( Qx, resultx, ECC_ARRAY_LENGTH );
     copy( Qy, resulty, ECC_ARRAY_LENGTH );
+}
+
+void ecc_ecdh( const uint32_t *px,
+               const uint32_t *py,
+               const uint32_t *secret,
+               uint32_t       *resultx,
+               uint32_t       *resulty )
+{
+    ecc_ec_mult( px, py, secret, resultx, resulty );
 }
 
 /**
@@ -712,6 +734,13 @@ int ecc_ecdsa_validate( const uint32_t *x,
     /* TODO: this u_1 * G + u_2 * Q_A  could be optimiced with Straus's algorithm. */
 
     return isSame( tmp3_x, r, ECC_ARRAY_LENGTH ) ? 0 : -1;
+}
+
+void ecc_gen_pub_key( const uint32_t *priv_key,
+                      uint32_t       *pub_x,
+                      uint32_t       *pub_y )
+{
+    ecc_ec_mult( ecc_g_point_x, ecc_g_point_y, priv_key, pub_x, pub_y );
 }
 
 int ecc_is_valid_key( const uint32_t * priv_key )

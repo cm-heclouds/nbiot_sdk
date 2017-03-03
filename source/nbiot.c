@@ -11,9 +11,8 @@
 #define DEFAULT_BINDING     "U"
 #define DEFAULT_STORING     true
 
-lwm2m_object_t*
-nbiot_object_find( nbiot_device_t *dev,
-                   uint16_t        objid )
+lwm2m_object_t* nbiot_object_find( nbiot_device_t *dev,
+                                   uint16_t        objid )
 {
     int i;
 
@@ -95,6 +94,88 @@ void nbiot_object_del( nbiot_device_t *dev,
     }
 }
 
+#ifdef HAVE_DTLS
+static int send_to_peer( dtls_context_t  *ctx,
+                         const session_t *session,
+                         uint8_t         *data,
+                         size_t           len )
+{
+    int ret;
+    size_t sent;
+    size_t offset;
+    connection_t *conn;
+    nbiot_device_t *dev;
+
+    dev = (nbiot_device_t*)ctx->app;
+    if ( NULL == dev )
+    {
+        return -1;
+    }
+
+    conn = connection_find( dev->connlist, session );
+    if ( NULL == conn )
+    {
+        return -1;
+    }
+
+    offset = 0;
+    while ( offset < len )
+    {
+        ret = nbiot_udp_send( dev->sock,
+                              data + offset,
+                              len - offset,
+                              &sent,
+                              conn->addr );
+        if ( ret < 0 )
+        {
+            return -1;
+        }
+        else
+        {
+            offset += sent;
+        }
+    }
+
+    return 0;
+}
+
+static int read_from_peer( dtls_context_t  *ctx,
+                           const session_t *session,
+                           uint8_t         *data,
+                           size_t           len )
+{
+    connection_t *conn;
+    nbiot_device_t *dev;
+
+    dev = (nbiot_device_t*)ctx->app;
+    if ( NULL == dev ||
+         NULL == dev->lwm2m )
+    {
+        return -1;
+    }
+
+    conn = connection_find( dev->connlist, session );
+    if ( NULL == conn )
+    {
+        return -1;
+    }
+
+    lwm2m_handle_packet( dev->lwm2m,
+                         data,
+                         len,
+                         conn );
+
+    return 0;
+}
+
+static dtls_handler_t dtls_cb =
+{
+    .write = send_to_peer,
+    .read  = read_from_peer,
+    .event = NULL,
+};
+#endif
+
 int nbiot_device_create( nbiot_device_t **dev,
                          uint16_t         port,
                          const char      *serial_number )
@@ -150,12 +231,37 @@ int nbiot_device_create( nbiot_device_t **dev,
         return NBIOT_ERR_INTERNAL;
     }
 
-    tmp->lwm2m = lwm2m_init( tmp );
+#ifdef HAVE_DTLS
+    tmp->dtls = dtls_new_context( tmp );
+    if ( NULL == tmp->dtls )
+    {
+        nbiot_udp_close( tmp->sock );
+        nbiot_free( tmp );
+
+        return NBIOT_ERR_DTLS;
+    }
+    dtls_set_handler( tmp->dtls, &dtls_cb );
+#endif
+
+    tmp->lwm2m = (lwm2m_context_t*)nbiot_malloc( sizeof(lwm2m_context_t) );
     if ( NULL == tmp->lwm2m )
     {
+        nbiot_udp_close( tmp->sock );
+        nbiot_free( tmp );
+
+        return NBIOT_ERR_NO_MEMORY;
+    }
+
+    if ( lwm2m_init(tmp->lwm2m,tmp) )
+    {
+#ifdef HAVE_DTLS
+        dtls_free_context( tmp->dtls );
+#endif
         clear_device_object( dev_obj );
         nbiot_udp_close( tmp->sock );
+        lwm2m_close( tmp->lwm2m );
         nbiot_free( tmp->obj_arr );
+        nbiot_free( tmp->lwm2m );
         nbiot_free( dev_obj );
         nbiot_free( tmp );
 
@@ -238,7 +344,8 @@ int nbiot_device_connect( nbiot_device_t *dev,
     sec_obj = create_security_object( DEFAULT_SERVER_ID,
                                       server_uri,
                                       (uint32_t)keep_alive,
-                                      DEFAULT_BOOTSTRAP );
+                                      DEFAULT_BOOTSTRAP,
+                                      false );
     if ( NULL == sec_obj )
     {
         return NBIOT_ERR_INTERNAL;
@@ -290,6 +397,14 @@ int nbiot_device_close( nbiot_device_t *dev )
         nbiot_udp_close( dev->sock );
         dev->sock = NULL;
     }
+
+#ifdef HAVE_DTLS
+    if ( NULL != dev->dtls )
+    {
+        dtls_free_context( dev->dtls );
+        dev->dtls = NULL;
+    }
+#endif
 
     if ( NULL != dev->connlist )
     {
@@ -404,12 +519,11 @@ int nbiot_device_step( nbiot_device_t *dev,
 
         if ( read > 0 )
         {
-            conn = connection_find( dev->connlist,
-                                    dev->addr );
+            conn = connection_find( dev->connlist, dev->addr );
             if ( NULL != conn )
             {
 #ifdef HAVE_DTLS
-                ret = dtls_handle_message( conn->dtls,
+                ret = dtls_handle_message( dev->dtls,
                                            conn->addr,
                                            buff,
                                            read );

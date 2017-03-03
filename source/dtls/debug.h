@@ -9,7 +9,7 @@
 #define NBIOT_SOURCE_DTLS_DEBUG_H_
 
 #include <utils.h>
-#include "session.h"
+#include "global.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -32,11 +32,6 @@ void SHA256_Update( SHA256_CTX    *context,
                     size_t         len );
 void SHA256_Final( uint8_t     digest[SHA256_DIGEST_LENGTH],
                    SHA256_CTX *context );
-char* SHA256_End( SHA256_CTX *context,
-                  char        buffer[SHA256_DIGEST_STRING_LENGTH] );
-char* SHA256_Data( const uint8_t *data,
-                   size_t         len,
-                   char           digest[SHA256_DIGEST_STRING_LENGTH] );
 
 #ifdef __cplusplus
 } /* extern "C" { */

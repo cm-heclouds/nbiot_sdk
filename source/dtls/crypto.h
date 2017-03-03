@@ -20,7 +20,6 @@
 extern "C" {
 #endif
 
-/* TLS_PSK_WITH_AES_128_CCM_8 */
 #define DTLS_MAC_KEY_LENGTH       0
 #define DTLS_KEY_LENGTH           16 /* AES-128 */
 #define DTLS_BLK_LENGTH           16 /* AES-128 */
@@ -48,7 +47,6 @@ typedef enum
     DTLS_ECDH_CURVE_SECP256R1
 } dtls_ecdh_curve;
 
-/** Crypto context for TLS_PSK_WITH_AES_128_CCM_8 cipher suite. */
 typedef struct
 {
     rijndael_ctx ctx; /**< AES-128 encryption context */
@@ -103,7 +101,6 @@ typedef struct
 
     dtls_compression_t                compression;                              /**< compression method */
     dtls_cipher_t                     cipher;                                   /**< cipher type */
-    unsigned int                      do_client_auth : 1;
     dtls_handshake_parameters_ecdsa_t ecdsa;
 } dtls_handshake_parameters_t;
 
@@ -269,21 +266,6 @@ int dtls_decrypt( const unsigned char *src,
 
 /* helper functions */
 
-/**
-* Generates pre_master_sercet from given PSK and fills the result
-* according to the "plain PSK" case in section 2 of RFC 4279.
-* Diffie-Hellman and RSA key exchange are currently not supported.
-*
-* @param key    The shared key.
-* @param keylen Length of @p key in bytes.
-* @param result The derived pre master secret.
-* @return The actual length of @p result.
-*/
-int dtls_psk_pre_master_secret( unsigned char *key,
-                                size_t         keylen,
-                                unsigned char *result,
-                                size_t         result_len );
-
 #define DTLS_EC_KEY_SIZE 32
 
 int dtls_ecdh_pre_master_secret( unsigned char *priv_key,
@@ -341,14 +323,11 @@ int dtls_ec_key_from_uint32_asn1( const uint32_t *key,
                                   unsigned char  *buf );
 
 
-dtls_handshake_parameters_t *dtls_handshake_new();
-
+dtls_handshake_parameters_t *dtls_handshake_new( void );
 void dtls_handshake_free( dtls_handshake_parameters_t *handshake );
 
-dtls_security_parameters_t *dtls_security_new();
-
+dtls_security_parameters_t *dtls_security_new( void );
 void dtls_security_free( dtls_security_parameters_t *security );
-void crypto_init( void );
 
 #ifdef __cplusplus
 } /* extern "C" { */

@@ -10,7 +10,7 @@
 #include <stddef.h>   /* for size_t */
 #include <stdint.h>   /* for integer types */
 #include <stdbool.h>  /* for bool */
-#include <time.h>     /* for time_t */
+#include <time.h>     /* for time_t clock_t */
 #include <float.h>    /* for DBL_MAX */
 #include <inttypes.h> /* fro PRId64 */
 #endif

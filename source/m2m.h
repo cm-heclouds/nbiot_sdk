@@ -8,10 +8,7 @@
 
 #include <utils.h>
 #include <nbiot.h>
-#include "lwm2m.h"
-#ifdef HAVE_DTLS
-#include "dtls.h"
-#endif
+#include <lwm2m.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -20,22 +17,11 @@ extern "C" {
 /**
  * connection定义
 **/
-#ifdef HAVE_DTLS
-typedef struct connection_t
-{
-    struct connection_t *next;
-    nbiot_sockaddr_t    *addr;
-    lwm2m_context_t     *lwm2m;
-    nbiot_device_t      *dev;
-    dtls_context_t      *dtls;
-}connection_t;
-#else
 typedef struct connection_t
 {
     struct connection_t *next;
     nbiot_sockaddr_t    *addr;
 }connection_t;
-#endif
 
 /**
  * 创建连接，然后加入连接list中
@@ -44,11 +30,10 @@ typedef struct connection_t
  *        port 目标端口
  * @return 成功返回连接句柄，否则返回NULL
 **/
-connection_t*
-connection_create( connection_t   *connlist,
-                   nbiot_socket_t *sock,
-                   const char     *addr,
-                   uint16_t        port );
+connection_t* connection_create( connection_t   *connlist,
+                                 nbiot_socket_t *sock,
+                                 const char     *addr,
+                                 uint16_t        port );
 
 /**
  * 查找连接
@@ -56,9 +41,8 @@ connection_create( connection_t   *connlist,
  *        addr 指向socket地址信息的内存
  * @return 成功返回连接句柄，否则返回NULL
 **/
-connection_t*
-connection_find( connection_t           *connlist,
-                 const nbiot_sockaddr_t *addr );
+connection_t* connection_find( connection_t           *connlist,
+                               const nbiot_sockaddr_t *addr );
 
 /**
  * 移除连接
@@ -66,9 +50,8 @@ connection_find( connection_t           *connlist,
  *        conn 连接句柄
  * @return 返回连接list
 **/
-connection_t*
-connection_remove( connection_t *connlist,
-                   connection_t *conn );
+connection_t* connection_remove( connection_t *connlist,
+                                 connection_t *conn );
 
 /**
  * 销毁连接list
@@ -79,16 +62,17 @@ void connection_destroy( connection_t *connlist );
 /**
  * 创建security object
  * @param svr_id  服务器id
- *        svr_uri 服务器链接地址
+ *        svr_uri 服务器链接地址(例如coap://127.0.0.1:5683)
+ *                在运行过程中必须有效
  *        holdoff_time client关闭时间
  *        bootstrap 是否为bootstrap标记
  * @return 成功返回security object指针，否则返回NULL
 **/
-lwm2m_object_t*
-create_security_object( uint16_t    svr_id,
-                        const char *svr_uri,
-                        uint32_t    holdoff_time,
-                        bool        bootstrap );
+lwm2m_object_t* create_security_object( uint16_t    svr_id,
+                                        const char *svr_uri,
+                                        uint32_t    holdoff_time,
+                                        bool        bootstrap,
+                                        bool        svr_uri_free );
 
 /**
  * 清理security object
@@ -102,8 +86,8 @@ void clear_security_object( lwm2m_object_t *sec_obj );
  *        sec_instid security instance id
  * @return coap连接字符串，使用完需用lwm2m_free释放内存，失败返回NULL
 **/
-char* get_server_uri( lwm2m_object_t *sec_obj,
-                      uint16_t        sec_instid );
+const char* get_server_uri( lwm2m_object_t *sec_obj,
+                            uint16_t        sec_instid );
 
 /**
  * 创建server object
@@ -113,11 +97,10 @@ char* get_server_uri( lwm2m_object_t *sec_obj,
  *        storing 是否保存Notify
  * @return 成功返回server object指针，否则返回NULL
 **/
-lwm2m_object_t*
-create_server_object( uint16_t    svr_id,
-                      const char *binding,
-                      uint32_t    lifetime,
-                      bool        storing );
+lwm2m_object_t* create_server_object( uint16_t    svr_id,
+                                      const char *binding,
+                                      uint32_t    lifetime,
+                                      bool        storing );
 
 /**
  * 清理server object
@@ -127,11 +110,10 @@ void clear_server_object( lwm2m_object_t *svr_obj );
 
 /**
  * 创建device object
- * @param serial_number 序列号
+ * @param serial_number 序列号,在运行过程中必须有效
  * @return 成功返回device object指针，否则返回NULL
 **/
-lwm2m_object_t*
-create_device_object( const char *serial_number );
+lwm2m_object_t* create_device_object( const char *serial_number );
 
 /**
  * 清理device object

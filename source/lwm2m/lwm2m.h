@@ -494,8 +494,8 @@ typedef enum
 typedef struct
 {
     lwm2m_client_state_t       state;
-    char                      *endpointName;
-    char                      *authCode;
+    const char                *endpointName;
+    const char                *authCode;
     lwm2m_server_t            *bootstrapServerList;
     lwm2m_server_t            *serverList;
     lwm2m_object_t            *objectList;
@@ -508,7 +508,8 @@ typedef struct
 /*
  * initialize a liblwm2m context.
 */
-lwm2m_context_t * lwm2m_init( void *userData );
+int lwm2m_init( lwm2m_context_t *contextP,
+                void            *userData );
 
 /*
  * close a liblwm2m context.
@@ -530,10 +531,11 @@ void lwm2m_handle_packet( lwm2m_context_t *contextP,
                           void            *fromSessionH );
 
 /*
-* configure the client side with the Endpoint Name, authCode
-* for objects (can't be nil) and a list of objects.
-* LWM2M Security Object (ID 0) must be present with either a bootstrap server or a LWM2M server and
-* its matching LWM2M Server Object (ID 1) instance
+ * configure the client side with the Endpoint Name, authCode
+ * for objects (can't be nil) and a list of objects.
+ * LWM2M Security Object (ID 0) must be present with either a bootstrap server or a LWM2M server and
+ * its matching LWM2M Server Object (ID 1) instance
+ * notice: endpointName、authCode以及objectList指向的内存块必须在运行过程中有效
 */
 int lwm2m_configure( lwm2m_context_t *contextP,
                      const char      *endpointName,

@@ -28,27 +28,22 @@ static inline void dtls_cipher_context_release( void )
     /* nothing */
 }
 
-void crypto_init( void )
+static inline dtls_handshake_parameters_t* dtls_handshake_malloc( void )
 {
-    /* add your code here */
+    return (dtls_handshake_parameters_t*)nbiot_malloc( sizeof(dtls_handshake_parameters_t) );
 }
 
-static dtls_handshake_parameters_t *dtls_handshake_malloc( void )
-{
-    return nbiot_malloc( sizeof(dtls_handshake_parameters_t) );
-}
-
-static void dtls_handshake_dealloc( dtls_handshake_parameters_t *handshake )
+static inline void dtls_handshake_dealloc( dtls_handshake_parameters_t *handshake )
 {
     nbiot_free( handshake );
 }
 
-static dtls_security_parameters_t *dtls_security_malloc()
+static inline dtls_security_parameters_t* dtls_security_malloc()
 {
-    return nbiot_malloc( sizeof(dtls_security_parameters_t) );
+    return (dtls_security_parameters_t*)nbiot_malloc( sizeof(dtls_security_parameters_t) );
 }
 
-static void dtls_security_dealloc( dtls_security_parameters_t *security )
+static inline void dtls_security_dealloc( dtls_security_parameters_t *security )
 {
     nbiot_free( security );
 }

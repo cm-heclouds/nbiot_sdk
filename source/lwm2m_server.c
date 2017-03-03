@@ -95,11 +95,10 @@ static uint8_t prv_server_read( uint16_t        instid,
     return ret;
 }
 
-lwm2m_object_t*
-create_server_object( uint16_t    svr_id,
-                      const char *binding,
-                      uint32_t    lifetime,
-                      bool        storing )
+lwm2m_object_t* create_server_object( uint16_t    svr_id,
+                                      const char *binding,
+                                      uint32_t    lifetime,
+                                      bool        storing )
 {
     lwm2m_object_t *obj;
     server_t *svr;

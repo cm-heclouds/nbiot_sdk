@@ -18,11 +18,6 @@ static inline void netq_free_node( netq_t *node )
     nbiot_free( node );
 }
 
-void netq_init( void )
-{
-    /* add your code here */
-}
-
 int netq_insert_node( list_t  queue,
                       netq_t *node )
 {

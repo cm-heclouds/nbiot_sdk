@@ -516,28 +516,28 @@ void observe_step( lwm2m_context_t * contextP,
                             {
                                 case LWM2M_TYPE_INTEGER:
                                 {
-                                                           int64_t diff;
+                                    int64_t diff;
 
-                                                           diff = integerValue - watcherP->lastValue.asInteger;
-                                                           if ( (diff < 0 && (0 - diff) >= watcherP->parameters->step)
-                                                                || (diff >= 0 && diff >= watcherP->parameters->step) )
-                                                           {
-                                                               LOG( "Notify on step condition" );
-                                                               notify = true;
-                                                           }
+                                    diff = integerValue - watcherP->lastValue.asInteger;
+                                    if ( (diff < 0 && (0 - diff) >= watcherP->parameters->step)
+                                         || (diff >= 0 && diff >= watcherP->parameters->step) )
+                                    {
+                                        LOG( "Notify on step condition" );
+                                        notify = true;
+                                    }
                                 }
                                 break;
                                 case LWM2M_TYPE_FLOAT:
                                 {
-                                                         double diff;
+                                    double diff;
 
-                                                         diff = floatValue - watcherP->lastValue.asFloat;
-                                                         if ( (diff < 0 && (0 - diff) >= watcherP->parameters->step)
-                                                              || (diff >= 0 && diff >= watcherP->parameters->step) )
-                                                         {
-                                                             LOG( "Notify on step condition" );
-                                                             notify = true;
-                                                         }
+                                    diff = floatValue - watcherP->lastValue.asFloat;
+                                    if ( (diff < 0 && (0 - diff) >= watcherP->parameters->step)
+                                         || (diff >= 0 && diff >= watcherP->parameters->step) )
+                                    {
+                                        LOG( "Notify on step condition" );
+                                        notify = true;
+                                    }
                                 }
                                 break;
                                 default:

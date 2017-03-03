@@ -114,12 +114,6 @@ const static sha2_word32 sha256_initial_hash_value[8] =
     0x5be0cd19UL
 };
 
-/*
- * Constant used by SHA256_End() functions for converting the
- * digest to a readable hexadecimal character string:
-*/
-static const char *sha2_hex_digits = "0123456789abcdef";
-
 void SHA256_Init( SHA256_CTX* context )
 {
     if ( context == (SHA256_CTX*)0 )
@@ -345,46 +339,4 @@ void SHA256_Final( sha2_byte digest[], SHA256_CTX* context )
     /* Clean up state data: */
     MEMSET_BZERO( context, sizeof(*context) );
     usedspace = 0;
-}
-
-char *SHA256_End( SHA256_CTX *context,
-                  char        buffer[] )
-{
-    sha2_byte digest[SHA256_DIGEST_LENGTH], *d = digest;
-    int i;
-
-    if ( context == (SHA256_CTX*)0 )
-    {
-        return buffer;
-    }
-
-    if ( buffer != (char*)0 )
-    {
-        SHA256_Final( digest, context );
-
-        for ( i = 0; i < SHA256_DIGEST_LENGTH; i++ )
-        {
-            *buffer++ = sha2_hex_digits[(*d & 0xf0) >> 4];
-            *buffer++ = sha2_hex_digits[*d & 0x0f];
-            d++;
-        }
-        *buffer = (char)0;
-    }
-    else
-    {
-        MEMSET_BZERO( context, sizeof(*context) );
-    }
-    MEMSET_BZERO( digest, SHA256_DIGEST_LENGTH );
-    return buffer;
-}
-
-char* SHA256_Data( const sha2_byte *data,
-                   size_t           len,
-                   char             digest[SHA256_DIGEST_STRING_LENGTH] )
-{
-    SHA256_CTX context;
-
-    SHA256_Init( &context );
-    SHA256_Update( &context, data, len );
-    return SHA256_End( &context, digest );
 }

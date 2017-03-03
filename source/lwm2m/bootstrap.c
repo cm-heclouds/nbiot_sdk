@@ -352,105 +352,105 @@ coap_status_t bootstrap_handleCommand( lwm2m_context_t * contextP,
     {
         case COAP_PUT:
         {
-                         if ( LWM2M_URI_IS_SET_INSTANCE( uriP ) )
-                         {
-                             if ( object_isInstanceNew( contextP, uriP->objectId, uriP->instanceId ) )
-                             {
-                                 result = object_create( contextP, uriP, format, message->payload, message->payload_len );
-                                 if ( COAP_201_CREATED == result )
-                                 {
-                                     result = COAP_204_CHANGED;
-                                 }
-                             }
-                             else
-                             {
-                                 result = object_write( contextP, uriP, format, message->payload, message->payload_len );
-                                 if ( uriP->objectId == LWM2M_SECURITY_OBJECT_ID
-                                      && result == COAP_204_CHANGED )
-                                 {
-                                     prv_tagServer( contextP, uriP->instanceId );
-                                 }
-                             }
-                         }
-                         else
-                         {
-                             lwm2m_data_t * dataP = NULL;
-                             int size = 0;
-                             int i;
+            if ( LWM2M_URI_IS_SET_INSTANCE( uriP ) )
+            {
+                if ( object_isInstanceNew( contextP, uriP->objectId, uriP->instanceId ) )
+                {
+                    result = object_create( contextP, uriP, format, message->payload, message->payload_len );
+                    if ( COAP_201_CREATED == result )
+                    {
+                        result = COAP_204_CHANGED;
+                    }
+                }
+                else
+                {
+                    result = object_write( contextP, uriP, format, message->payload, message->payload_len );
+                    if ( uriP->objectId == LWM2M_SECURITY_OBJECT_ID
+                         && result == COAP_204_CHANGED )
+                    {
+                        prv_tagServer( contextP, uriP->instanceId );
+                    }
+                }
+            }
+            else
+            {
+                lwm2m_data_t * dataP = NULL;
+                int size = 0;
+                int i;
 
-                             if ( message->payload_len == 0 || message->payload == 0 )
-                             {
-                                 result = COAP_400_BAD_REQUEST;
-                             }
-                             else
-                             {
-                                 size = lwm2m_data_parse( uriP, message->payload, message->payload_len, format, &dataP );
-                                 if ( size == 0 )
-                                 {
-                                     result = COAP_500_INTERNAL_SERVER_ERROR;
-                                     break;
-                                 }
+                if ( message->payload_len == 0 || message->payload == 0 )
+                {
+                    result = COAP_400_BAD_REQUEST;
+                }
+                else
+                {
+                    size = lwm2m_data_parse( uriP, message->payload, message->payload_len, format, &dataP );
+                    if ( size == 0 )
+                    {
+                        result = COAP_500_INTERNAL_SERVER_ERROR;
+                        break;
+                    }
 
-                                 for ( i = 0; i < size; i++ )
-                                 {
-                                     if ( dataP[i].type == LWM2M_TYPE_OBJECT_INSTANCE )
-                                     {
-                                         if ( object_isInstanceNew( contextP, uriP->objectId, dataP[i].id ) )
-                                         {
-                                             result = object_createInstance( contextP, uriP, &dataP[i] );
-                                             if ( COAP_201_CREATED == result )
-                                             {
-                                                 result = COAP_204_CHANGED;
-                                             }
-                                         }
-                                         else
-                                         {
-                                             result = object_writeInstance( contextP, uriP, &dataP[i] );
-                                             if ( uriP->objectId == LWM2M_SECURITY_OBJECT_ID
-                                                  && result == COAP_204_CHANGED )
-                                             {
-                                                 prv_tagServer( contextP, dataP[i].id );
-                                             }
-                                         }
+                    for ( i = 0; i < size; i++ )
+                    {
+                        if ( dataP[i].type == LWM2M_TYPE_OBJECT_INSTANCE )
+                        {
+                            if ( object_isInstanceNew( contextP, uriP->objectId, dataP[i].id ) )
+                            {
+                                result = object_createInstance( contextP, uriP, &dataP[i] );
+                                if ( COAP_201_CREATED == result )
+                                {
+                                    result = COAP_204_CHANGED;
+                                }
+                            }
+                            else
+                            {
+                                result = object_writeInstance( contextP, uriP, &dataP[i] );
+                                if ( uriP->objectId == LWM2M_SECURITY_OBJECT_ID
+                                     && result == COAP_204_CHANGED )
+                                {
+                                    prv_tagServer( contextP, dataP[i].id );
+                                }
+                            }
 
-                                         if ( result != COAP_204_CHANGED ) /* Stop object create or write when result is error */
-                                         {
-                                             break;
-                                         }
-                                     }
-                                     else
-                                     {
-                                         result = COAP_400_BAD_REQUEST;
-                                     }
-                                 }
-                                 lwm2m_data_free( size, dataP );
-                             }
-                         }
+                            if ( result != COAP_204_CHANGED ) /* Stop object create or write when result is error */
+                            {
+                                break;
+                            }
+                        }
+                        else
+                        {
+                            result = COAP_400_BAD_REQUEST;
+                        }
+                    }
+                    lwm2m_data_free( size, dataP );
+                }
+            }
         }
         break;
 
         case COAP_DELETE:
         {
-                            if ( LWM2M_URI_IS_SET_RESOURCE( uriP ) )
-                            {
-                                result = COAP_400_BAD_REQUEST;
-                            }
-                            else
-                            {
-                                result = object_delete( contextP, uriP );
-                                if ( uriP->objectId == LWM2M_SECURITY_OBJECT_ID
-                                     && result == COAP_202_DELETED )
-                                {
-                                    if ( LWM2M_URI_IS_SET_INSTANCE( uriP ) )
-                                    {
-                                        prv_tagServer( contextP, uriP->instanceId );
-                                    }
-                                    else
-                                    {
-                                        prv_tagAllServer( contextP, NULL );
-                                    }
-                                }
-                            }
+            if ( LWM2M_URI_IS_SET_RESOURCE( uriP ) )
+            {
+                result = COAP_400_BAD_REQUEST;
+            }
+            else
+            {
+                result = object_delete( contextP, uriP );
+                if ( uriP->objectId == LWM2M_SECURITY_OBJECT_ID
+                     && result == COAP_202_DELETED )
+                {
+                    if ( LWM2M_URI_IS_SET_INSTANCE( uriP ) )
+                    {
+                        prv_tagServer( contextP, uriP->instanceId );
+                    }
+                    else
+                    {
+                        prv_tagAllServer( contextP, NULL );
+                    }
+                }
+            }
         }
         break;
 

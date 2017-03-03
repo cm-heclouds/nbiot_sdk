@@ -8,11 +8,6 @@
 #include "peer.h"
 #include <utils.h>
 
-void peer_init( void )
-{
-    /* add your code here */
-}
-
 static inline dtls_peer_t* dtls_malloc_peer()
 {
     return (dtls_peer_t *)nbiot_malloc( sizeof(dtls_peer_t) );

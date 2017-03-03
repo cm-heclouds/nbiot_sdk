@@ -7,23 +7,23 @@
 
 #include "internals.h"
 
-lwm2m_context_t * lwm2m_init( void * userData )
+int lwm2m_init( lwm2m_context_t *contextP,
+                void            *userData )
 {
-    lwm2m_context_t * contextP;
-
     LOG( "Entering" );
-    contextP = (lwm2m_context_t *)nbiot_malloc( sizeof(lwm2m_context_t) );
-    if ( NULL != contextP )
+    if ( NULL == contextP )
     {
-        nbiot_memzero( contextP, sizeof(lwm2m_context_t) );
-        contextP->userData = userData;
-        contextP->nextMID = nbiot_rand();
+        return -1;
     }
 
-    return contextP;
+    nbiot_memzero( contextP, sizeof(lwm2m_context_t) );
+    contextP->userData = userData;
+    contextP->nextMID = nbiot_rand();
+
+    return 0;
 }
 
-void lwm2m_deregister( lwm2m_context_t * context )
+void lwm2m_deregister( lwm2m_context_t *context )
 {
     lwm2m_server_t * server = context->serverList;
 
@@ -108,18 +108,14 @@ void prv_deleteTransactionList( lwm2m_context_t * context )
     }
 }
 
-void lwm2m_close( lwm2m_context_t * contextP )
+void lwm2m_close( lwm2m_context_t *contextP )
 {
     LOG( "Entering" );
     lwm2m_deregister( contextP );
     prv_deleteServerList( contextP );
     prv_deleteBootstrapServerList( contextP );
     prv_deleteObservedList( contextP );
-    nbiot_free( contextP->endpointName );
-    nbiot_free( contextP->authCode );
-
     prv_deleteTransactionList( contextP );
-    nbiot_free( contextP );
 }
 
 static int prv_refreshServerList( lwm2m_context_t * contextP )
@@ -175,7 +171,7 @@ int lwm2m_configure( lwm2m_context_t * contextP,
     int i;
     uint8_t found;
 
-    LOG_ARG( "endpointName: \"%s\", msisdn: \"null\", altPath: \"null\", numObject: %d", endpointName, numObject );
+    LOG_ARG( "endpointName: \"%s\", authCode: \"%s\", msisdn: \"null\", altPath: \"null\", numObject: %d", endpointName, authCode, numObject );
     /* This API can be called only once for now */
     if ( contextP->endpointName != NULL ||
          contextP->authCode != NULL ||
@@ -184,6 +180,7 @@ int lwm2m_configure( lwm2m_context_t * contextP,
     if ( endpointName == NULL ) return COAP_400_BAD_REQUEST;
     if ( authCode == NULL ) return COAP_400_BAD_REQUEST;
     if ( numObject < 3 ) return COAP_400_BAD_REQUEST;
+
     /* Check that mandatory objects are present */
     found = 0;
     for ( i = 0; i < numObject; i++ )
@@ -192,18 +189,11 @@ int lwm2m_configure( lwm2m_context_t * contextP,
         if ( objectList[i]->objID == LWM2M_SERVER_OBJECT_ID ) found |= 0x02;
         if ( objectList[i]->objID == LWM2M_DEVICE_OBJECT_ID ) found |= 0x04;
     }
-    if ( found != 0x07 ) return COAP_400_BAD_REQUEST;
-    contextP->endpointName = nbiot_strdup( endpointName );
-    if ( contextP->endpointName == NULL )
-    {
-        return COAP_500_INTERNAL_SERVER_ERROR;
-    }
 
-    contextP->authCode = nbiot_strdup( authCode );
-    if ( contextP->authCode == NULL )
-    {
-        return COAP_500_INTERNAL_SERVER_ERROR;
-    }
+    if ( found != 0x07 ) return COAP_400_BAD_REQUEST;
+
+    contextP->endpointName = endpointName;
+    contextP->authCode = authCode;
 
     for ( i = 0; i < numObject; i++ )
     {
@@ -288,7 +278,7 @@ next_step:
         {
             bootstrap_start( contextP );
             contextP->state = STATE_BOOTSTRAPPING;
-            bootstrap_step( contextP, tv_sec, timeoutP );
+            bootstrap_step( contextP, (uint32_t)tv_sec, timeoutP );
         }
         else
 #endif
@@ -311,7 +301,7 @@ next_step:
 
             default:
             /* keep on waiting */
-            bootstrap_step( contextP, tv_sec, timeoutP );
+            bootstrap_step( contextP, (uint32_t)tv_sec, timeoutP );
             break;
         }
         break;

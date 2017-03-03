@@ -8,6 +8,9 @@
 
 #include "m2m.h"
 #include <nbiot.h>
+#ifdef HAVE_DTLS
+#include <dtls.h>
+#endif
 
 struct nbiot_device_t
 {
@@ -18,6 +21,9 @@ struct nbiot_device_t
     nbiot_socket_t   *sock;
     nbiot_sockaddr_t *addr;
     connection_t     *connlist;
+#ifdef HAVE_DTLS
+    dtls_context_t   *dtls;
+#endif
 };
 
 /**

@@ -103,28 +103,6 @@ static inline uint32_t dtls_uint32_to_int( const unsigned char *field )
          | (uint32_t)field[3];
 }
 
-static inline uint64_t dtls_uint48_to_int( const unsigned char *field )
-{
-    return ((uint64_t)field[0] << 40)
-         | ((uint64_t)field[1] << 32)
-         | ((uint64_t)field[2] << 24)
-         | ((uint64_t)field[3] << 16)
-         | ((uint64_t)field[4] << 8)
-         | (uint64_t)field[5];
-}
-
-static inline uint64_t dtls_uint64_to_int( const unsigned char *field )
-{
-    return ((uint64_t)field[0] << 56)
-         | ((uint64_t)field[1] << 48)
-         | ((uint64_t)field[2] << 40)
-         | ((uint64_t)field[3] << 32)
-         | ((uint64_t)field[4] << 24)
-         | ((uint64_t)field[5] << 16)
-         | ((uint64_t)field[6] << 8)
-         | (uint64_t)field[7];
-}
-
 #ifdef __cplusplus
 } /* extern "C" { */
 #endif

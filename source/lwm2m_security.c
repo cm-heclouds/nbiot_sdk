@@ -5,14 +5,15 @@
 
 #include "m2m.h"
 
-typedef struct security_t
+typedef struct _security_t
 {
-    struct security_t *next;   /* matches lwm2m_list_t::next */
-    uint16_t                    instid; /* matches lwm2m_list_t::id */
-    char                       *uri;
-    uint16_t                    id;
-    uint32_t                    holdoff_time;
-    bool                        bootstrap;
+    struct _security_t *next;   /* matches lwm2m_list_t::next */
+    uint16_t            instid; /* matches lwm2m_list_t::id */
+    const char         *uri;
+    uint16_t            id;
+    uint32_t            holdoff_time;
+    bool                bootstrap;
+    bool                uri_free;
 }security_t;
 
 static uint8_t prv_get_value( lwm2m_data_t        *data,
@@ -98,11 +99,11 @@ static uint8_t prv_security_read( uint16_t        instid,
     return ret;
 }
 
-lwm2m_object_t*
-create_security_object( uint16_t    svr_id,
-                        const char *svr_uri,
-                        uint32_t    holdoff_time,
-                        bool        bootstrap )
+lwm2m_object_t* create_security_object( uint16_t    svr_id,
+                                        const char *svr_uri,
+                                        uint32_t    holdoff_time,
+                                        bool        bootstrap,
+                                        bool        svr_uri_free )
 {
     lwm2m_object_t *obj;
     security_t *sec;
@@ -131,10 +132,15 @@ create_security_object( uint16_t    svr_id,
 
     nbiot_memzero( sec, sizeof(security_t) );
     sec->instid = 0;
-    sec->uri = nbiot_strdup( svr_uri );
     sec->id = svr_id;
     sec->holdoff_time = holdoff_time;
     sec->bootstrap = bootstrap;
+    sec->uri_free = svr_uri_free;
+    if ( svr_uri_free )
+        sec->uri = nbiot_strdup( svr_uri );
+    else
+        sec->uri = svr_uri;
+
     obj->instanceList = LWM2M_LIST_ADD(obj->instanceList,sec);
     obj->readFunc = prv_security_read; /* 只读 */
 
@@ -152,9 +158,9 @@ void clear_security_object( lwm2m_object_t *sec_obj )
             sec = (security_t*)sec_obj->instanceList;
             sec_obj->instanceList = sec_obj->instanceList->next;
 
-            if ( NULL != sec->uri )
+            if ( NULL != sec->uri && sec->uri_free )
             {
-                nbiot_free( sec->uri );
+                nbiot_free( (char*)sec->uri );
             }
 
             nbiot_free( sec );
@@ -162,15 +168,15 @@ void clear_security_object( lwm2m_object_t *sec_obj )
     }
 }
 
-char* get_server_uri( lwm2m_object_t *sec_obj,
-                      uint16_t        sec_instid )
+const char* get_server_uri( lwm2m_object_t *sec_obj,
+                            uint16_t        sec_instid )
 {
     security_t *sec;
 
     sec = (security_t*)LWM2M_LIST_FIND(sec_obj->instanceList,sec_instid);
     if ( NULL != sec )
     {
-        return nbiot_strdup( sec->uri );
+        return sec->uri;
     }
 
     return NULL;

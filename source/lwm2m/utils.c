@@ -481,29 +481,29 @@ int utils_opaqueToInt( const uint8_t * buffer,
     {
         case 1:
         {
-                  *dataP = (int8_t)buffer[0];
+            *dataP = (int8_t)buffer[0];
 
-                  break;
+            break;
         }
 
         case 2:
         {
-                  int16_t value;
+            int16_t value;
 
-                  utils_copyValue( &value, buffer, buffer_len );
+            utils_copyValue( &value, buffer, buffer_len );
 
-                  *dataP = value;
-                  break;
+            *dataP = value;
+            break;
         }
 
         case 4:
         {
-                  int32_t value;
+            int32_t value;
 
-                  utils_copyValue( &value, buffer, buffer_len );
+            utils_copyValue( &value, buffer, buffer_len );
 
-                  *dataP = value;
-                  break;
+            *dataP = value;
+            break;
         }
 
         case 8:
@@ -525,11 +525,11 @@ int utils_opaqueToFloat( const uint8_t * buffer,
     {
         case 4:
         {
-                  float temp;
+            float temp;
 
-                  utils_copyValue( &temp, buffer, buffer_len );
+            utils_copyValue( &temp, buffer, buffer_len );
 
-                  *dataP = temp;
+            *dataP = temp;
         }
         return 4;
 
@@ -789,28 +789,28 @@ size_t utils_base64ToOpaque( uint8_t * dataP,
         break;
         case 2:
         {
-                  uint8_t tmp[2];
+            uint8_t tmp[2];
 
-                  tmp[0] = prv_b64Revert( dataP[dataLen - 2] );
-                  tmp[1] = prv_b64Revert( dataP[dataLen - 1] );
+            tmp[0] = prv_b64Revert( dataP[dataLen - 2] );
+            tmp[1] = prv_b64Revert( dataP[dataLen - 1] );
 
-                  *bufferP[result_index - 3] = (tmp[0] << 2) | (tmp[1] >> 4);
-                  *bufferP[result_index - 2] = (tmp[1] << 4);
-                  result_len -= 2;
+            *bufferP[result_index - 3] = (tmp[0] << 2) | (tmp[1] >> 4);
+            *bufferP[result_index - 2] = (tmp[1] << 4);
+            result_len -= 2;
         }
         break;
         case 3:
         {
-                  uint8_t tmp[3];
+            uint8_t tmp[3];
 
-                  tmp[0] = prv_b64Revert( dataP[dataLen - 3] );
-                  tmp[1] = prv_b64Revert( dataP[dataLen - 2] );
-                  tmp[2] = prv_b64Revert( dataP[dataLen - 1] );
+            tmp[0] = prv_b64Revert( dataP[dataLen - 3] );
+            tmp[1] = prv_b64Revert( dataP[dataLen - 2] );
+            tmp[2] = prv_b64Revert( dataP[dataLen - 1] );
 
-                  *bufferP[result_index - 3] = (tmp[0] << 2) | (tmp[1] >> 4);
-                  *bufferP[result_index - 2] = (tmp[1] << 4) | (tmp[2] >> 2);
-                  *bufferP[result_index - 1] = (tmp[2] << 6);
-                  result_len -= 1;
+            *bufferP[result_index - 3] = (tmp[0] << 2) | (tmp[1] >> 4);
+            *bufferP[result_index - 2] = (tmp[1] << 4) | (tmp[2] >> 2);
+            *bufferP[result_index - 1] = (tmp[2] << 6);
+            result_len -= 1;
         }
         break;
         default:

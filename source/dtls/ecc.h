@@ -17,23 +17,11 @@ extern "C" {
 #define ECC_KEY_LENGTH   32 /* bytes */
 #define ECC_ARRAY_LENGTH 8
 
-extern const uint32_t ecc_g_point_x[8];
-extern const uint32_t ecc_g_point_y[8];
-
-void ecc_ec_mult( const uint32_t *px,
-                  const uint32_t *py,
-                  const uint32_t *secret,
-                  uint32_t       *resultx,
-                  uint32_t       *resulty );
-
-static inline void ecc_ecdh( const uint32_t *px,
-                             const uint32_t *py,
-                             const uint32_t *secret,
-                             uint32_t       *resultx,
-                             uint32_t       *resulty )
-{
-    ecc_ec_mult( px, py, secret, resultx, resulty );
-}
+void ecc_ecdh( const uint32_t *px,
+               const uint32_t *py,
+               const uint32_t *secret,
+               uint32_t       *resultx,
+               uint32_t       *resulty );
 
 int ecc_ecdsa_validate( const uint32_t *x,
                         const uint32_t *y,
@@ -47,14 +35,11 @@ int ecc_ecdsa_sign( const uint32_t *d,
                     uint32_t       *r,
                     uint32_t       *s );
 
-int ecc_is_valid_key( const uint32_t * priv_key );
+void ecc_gen_pub_key( const uint32_t *priv_key,
+                      uint32_t       *pub_x,
+                      uint32_t       *pub_y );
 
-static inline void ecc_gen_pub_key( const uint32_t *priv_key,
-                                    uint32_t       *pub_x,
-                                    uint32_t       *pub_y )
-{
-    ecc_ec_mult( ecc_g_point_x, ecc_g_point_y, priv_key, pub_x, pub_y );
-}
+int ecc_is_valid_key( const uint32_t *priv_key );
 
 #ifdef __cplusplus
 } /* extern "C" { */

@@ -234,41 +234,64 @@ static uint8_t prv_resource_read( uint16_t        instid,
         res_inst = obj_inst->resouces;
         while ( NULL != res_inst )
         {
-            ++i;
+            if ( res_inst->resource->flag & NBIOT_RESOURCE_READABLE )
+            {
+                ++i;
+            }
             res_inst = res_inst->next;
         }
 
-        *data = lwm2m_data_new( i );
-        if ( NULL == *data )
+        if ( i > 0 )
         {
-            return COAP_500_INTERNAL_SERVER_ERROR;
-        }
-        *num = i;
+            *data = lwm2m_data_new( i );
+            if ( NULL == *data )
+            {
+                return COAP_500_INTERNAL_SERVER_ERROR;
+            }
+            *num = i;
 
-        i = 0;
-        res_inst = obj_inst->resouces;
-        while ( NULL != res_inst )
-        {
-            (*data)[i++].id = res_inst->resid;
-            res_inst = res_inst->next;
-        }
-    }
-
-    i = 0;
-    do
-    {
-        res_inst = (resource_instance_t*)LWM2M_LIST_FIND( obj_inst->resouces, (*data)[i].id );
-        if ( NULL == res_inst )
-        {
-            ret = COAP_404_NOT_FOUND;
+            i = 0;
+            res_inst = obj_inst->resouces;
+            while ( NULL != res_inst )
+            {
+                if ( res_inst->resource->flag & NBIOT_RESOURCE_READABLE )
+                {
+                    (*data)[i++].id = res_inst->resid;
+                }
+                res_inst = res_inst->next;
+            }
         }
         else
         {
-            ret = prv_get_value( (*data)+i, res_inst );
+            *data = NULL;
+            *num = 0;
         }
+    }
 
-        ++i;
-    } while ( i < *num && COAP_205_CONTENT == ret );
+    ret = COAP_405_METHOD_NOT_ALLOWED;
+    if ( *num > 0 )
+    {
+        i = 0;
+        do
+        {
+            res_inst = (resource_instance_t*)LWM2M_LIST_FIND( obj_inst->resouces, (*data)[i].id );
+            if ( NULL == res_inst )
+            {
+                ret = COAP_404_NOT_FOUND;
+            }
+            else if ( res_inst->resource->flag & NBIOT_RESOURCE_READABLE )
+            {
+                ret = prv_get_value( (*data) + i, res_inst );
+            }
+            else
+            {
+                ret = COAP_405_METHOD_NOT_ALLOWED;
+            }
+
+            ++i;
+        }
+        while ( i < *num && COAP_205_CONTENT == ret );
+    }
 
     return ret;
 }
@@ -305,7 +328,7 @@ static uint8_t prv_resource_write( uint16_t        instid,
         }
 
         res = res_inst->resource;
-        if ( res->flag & NBIOT_VALUE_WRITABLE )
+        if ( res->flag & NBIOT_RESOURCE_WRITABLE )
         {
             ret = prv_set_value( data+i, res_inst );
             if ( COAP_204_CHANGED != ret )
@@ -351,7 +374,7 @@ static uint8_t prv_resource_execute( uint16_t        instid,
     }
 
     res = res_inst->resource;
-    if ( res->flag & NBIOT_VALUE_EXECUTABLE )
+    if ( res->flag & NBIOT_RESOURCE_EXECUTABLE )
     {
         if ( NULL != res->execute )
         {

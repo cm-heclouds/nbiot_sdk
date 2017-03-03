@@ -403,22 +403,22 @@ size_t tlv_serialize( bool isResourceInstance,
             /* fall throught */
             case LWM2M_TYPE_OBJECT_INSTANCE:
             {
-                                               uint8_t * tmpBuffer;
-                                               size_t tmpLength;
+                uint8_t * tmpBuffer;
+                size_t tmpLength;
 
-                                               tmpLength = tlv_serialize( isInstance, dataP[i].value.asChildren.count, dataP[i].value.asChildren.array, &tmpBuffer );
-                                               if ( tmpLength == 0 )
-                                               {
-                                                   length = 0;
-                                               }
-                                               else
-                                               {
-                                                   headerLen = prv_createHeader( *bufferP + index, false, dataP[i].type, dataP[i].id, tmpLength );
-                                                   index += headerLen;
-                                                   nbiot_memmove( *bufferP + index, tmpBuffer, tmpLength );
-                                                   index += tmpLength;
-                                                   nbiot_free( tmpBuffer );
-                                               }
+                tmpLength = tlv_serialize( isInstance, dataP[i].value.asChildren.count, dataP[i].value.asChildren.array, &tmpBuffer );
+                if ( tmpLength == 0 )
+                {
+                    length = 0;
+                }
+                else
+                {
+                    headerLen = prv_createHeader( *bufferP + index, false, dataP[i].type, dataP[i].id, tmpLength );
+                    index += headerLen;
+                    nbiot_memmove( *bufferP + index, tmpBuffer, tmpLength );
+                    index += tmpLength;
+                    nbiot_free( tmpBuffer );
+                }
             }
             break;
 

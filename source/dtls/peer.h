@@ -11,7 +11,6 @@
 #include "state.h"
 #include "global.h"
 #include "crypto.h"
-#include "session.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -95,8 +94,6 @@ static inline void dtls_security_params_switch( dtls_peer_t *peer )
     peer->security_params[1] = peer->security_params[0];
     peer->security_params[0] = security;
 }
-
-void peer_init( );
 
 /**
  * Creates a new peer for given @p session. The current configuration

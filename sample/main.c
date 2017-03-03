@@ -237,7 +237,7 @@ int main( int argc, char *argv[] )
         dis.resid         = 5500;
         dis.type          = NBIOT_VALUE_BOOLEAN;
         dis.value.as_bool = rand()%2 > 0;
-        dis.flag          = 0;
+        dis.flag          = NBIOT_RESOURCE_READABLE;
         dis.write         = NULL;
         dis.execute       = NULL;
 
@@ -247,7 +247,7 @@ int main( int argc, char *argv[] )
         dic.resid        = 5501;
         dic.type         = NBIOT_VALUE_INTEGER;
         dic.value.as_int = rand();
-        dic.flag         = 0;
+        dic.flag         = NBIOT_RESOURCE_READABLE;
         dic.write        = NULL;
         dic.execute      = NULL;
 
@@ -258,7 +258,7 @@ int main( int argc, char *argv[] )
         dicr.type             = NBIOT_VALUE_BINARY;
         dicr.value.as_bin.bin = (uint8_t*)nbiot_strdup( nbiot_itoa(tmp,rand()) );
         dicr.value.as_bin.len = nbiot_strlen( (char*)dicr.value.as_bin.bin ) + 1;
-        dicr.flag             = 0;
+        dicr.flag             = NBIOT_RESOURCE_READABLE;
         dicr.write            = NULL;
         dicr.execute          = NULL;
 
@@ -269,7 +269,7 @@ int main( int argc, char *argv[] )
         at.type             = NBIOT_VALUE_STRING;
         at.value.as_str.str = nbiot_strdup( nbiot_itoa(tmp,rand()) );
         at.value.as_str.len = nbiot_strlen( (char*)dicr.value.as_str.str ) + 1;
-        at.flag             = NBIOT_VALUE_WRITABLE;
+        at.flag             = NBIOT_RESOURCE_READABLE | NBIOT_RESOURCE_WRITABLE;
         at.write            = write_callback;
         at.execute          = NULL;
 
@@ -279,7 +279,7 @@ int main( int argc, char *argv[] )
         aicv.resid          = 5600;
         aicv.type           = NBIOT_VALUE_FLOAT;
         aicv.value.as_float = rand() * 0.001f;
-        aicv.flag           = 0;
+        aicv.flag           = NBIOT_RESOURCE_READABLE;
         aicv.write          = NULL;
         aicv.execute        = NULL;
 

@@ -17,18 +17,19 @@ extern "C" {
 /**
  * value类型
 **/
-#define NBIOT_VALUE_UNKNOWN    0x0
-#define NBIOT_VALUE_BOOLEAN    0x1
-#define NBIOT_VALUE_INTEGER    0x2
-#define NBIOT_VALUE_FLOAT      0x3
-#define NBIOT_VALUE_STRING     0x4
-#define NBIOT_VALUE_BINARY     0x5
+#define NBIOT_VALUE_UNKNOWN       0x0
+#define NBIOT_VALUE_BOOLEAN       0x1
+#define NBIOT_VALUE_INTEGER       0x2
+#define NBIOT_VALUE_FLOAT         0x3
+#define NBIOT_VALUE_STRING        0x4
+#define NBIOT_VALUE_BINARY        0x5
 
 /**
- * value标记
+ * resource标记
 **/
-#define NBIOT_VALUE_WRITABLE   0x1
-#define NBIOT_VALUE_EXECUTABLE 0x2
+#define NBIOT_RESOURCE_READABLE   0x1
+#define NBIOT_RESOURCE_WRITABLE   0x2
+#define NBIOT_RESOURCE_EXECUTABLE 0x4
 
 /**
  * value定义
@@ -99,7 +100,7 @@ typedef struct nbiot_device_t nbiot_device_t;
  * 创建OneNET接入设备
  * @param dev           [OUT] 指向nbiot_device_t指针的内存
  *        port          本地绑定端口
- *        serial_number 设备序列号
+ *        serial_number 设备序列号,在运行过程中必须有效
  * @return 成功返回NBIOT_ERR_OK
 **/
 int nbiot_device_create( nbiot_device_t **dev,
@@ -116,6 +117,7 @@ void nbiot_device_destroy( nbiot_device_t *dev );
  * 连接OneNET服务
  * @param dev 指向nbiot_device_t的内存
  *        server_uri 服务链接地址（例如coap://127.0.0.1:5683）
+ *                   在运行过程中必须有效
  *        keep_alive 保活时间
  *        bootstrap  标记（暂不支持bootstrap）
  * @return 成功返回NBIOT_ERR_OK

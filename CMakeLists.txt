@@ -2,10 +2,11 @@ cmake_minimum_required(VERSION 3.0)
 
 project(nbiot_sdk)
 
-option(UNIT_TEST  "test nbiot sdk" 0)
-option(HAVE_DTLS  "use tiny dtls" 0)
+option(UNIT_TEST  "unit test" 0)
+option(HAVE_DTLS  "use dtls" 0)
 option(BIG_ENDIAN "big endian" 0)
-option(WITH_LOGS  "with logs" 0)
+option(WITH_LOGS  "print logs" 0)
+option(BOOTSTRAP  "support boostrap" 0)
 
 if(WIN32)
     add_definitions(-DNBIOT_OS_WIN)
