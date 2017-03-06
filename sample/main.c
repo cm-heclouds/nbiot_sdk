@@ -19,8 +19,6 @@ void usage( const char *name )
     nbiot_printf( "-t TIME\t\tSet the lifetime of the client. Default: 300\r\n" );
     nbiot_printf( "-n NAME\t\tSet the endpoint name of the client.\r\n" );
     nbiot_printf( "-a AUTHCODE\tSet the authentication code of the client.\r\n" );
-    nbiot_printf( "-s SERIALNUM\tSet the  serial number of the client. Default: same as NAME\r\n" );
-    /* nbiot_printf( "-b \t\tBootstrap requested.\r\n" ); */
     nbiot_printf( "\r\n" );
 }
 
@@ -81,11 +79,9 @@ int main( int argc, char *argv[] )
 {
     int life_time = 300;
     uint16_t port = 56830;
-    bool bootstrap = false;
     const char *uri = NULL;
     const char *auth_code = NULL;
     const char *endpoint_name = NULL;
-    const char *serial_number = NULL;
 
     int opt = 1;
     while ( opt < argc )
@@ -165,27 +161,6 @@ int main( int argc, char *argv[] )
             }
             break;
 
-            case 's':
-            {
-                ++opt;
-                if ( opt >= argc )
-                {
-                    usage( argv[0] );
-                    return 0;
-                }
-
-                serial_number = argv[opt];
-            }
-            break;
-
-            /*
-            case 'b':
-            {
-                bootstrap = true;
-            }
-            break;
-            */
-
             default:
             {
                 usage( argv[0] );
@@ -203,11 +178,6 @@ int main( int argc, char *argv[] )
     {
         usage( argv[0] );
         return 0;
-    }
-
-    if ( NULL == serial_number )
-    {
-        serial_number = endpoint_name;
     }
 
     nbiot_init_environment();
@@ -283,7 +253,7 @@ int main( int argc, char *argv[] )
         aicv.write          = NULL;
         aicv.execute        = NULL;
 
-        ret = nbiot_device_create( &dev, port, serial_number );
+        ret = nbiot_device_create( &dev, port );
         if ( ret )
         {
             nbiot_printf( "create device instance failed.\r\n" );
@@ -292,8 +262,7 @@ int main( int argc, char *argv[] )
 
         ret = nbiot_device_connect( dev,
                                     uri,
-                                    life_time,
-                                    bootstrap );
+                                    life_time );
         if ( ret )
         {
             nbiot_device_destroy( dev );

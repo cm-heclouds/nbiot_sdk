@@ -188,7 +188,7 @@ int nbiot_isspace( char ch )
 int nbiot_atoi( const char *str )
 {
     int ret;
-    int neg;
+    int neg = 0;
 
     ret = 0;
     if ( str )
@@ -380,7 +380,7 @@ int nbiot_rand( void )
     static bool _srand = false;
     if ( !_srand )
     {
-        srand( time(NULL) );
+        srand( (unsigned int)time(NULL) );
     }
 
     return rand();

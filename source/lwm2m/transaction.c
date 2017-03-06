@@ -290,7 +290,7 @@ int transaction_send( lwm2m_context_t * contextP,
 
     if ( !transacP->ack_received )
     {
-        long unsigned timeout;
+        long unsigned timeout = 0;
 
         if ( 0 == transacP->retrans_counter )
         {

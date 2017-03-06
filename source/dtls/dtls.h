@@ -103,26 +103,21 @@ struct _dtls_context_t
     unsigned char   readbuf[DTLS_MAX_BUF];
 };
 
-/** 
- * Creates a new context object. The storage allocated for the new
- * object must be released with dtls_free_context().
+/**
+ * Initialize a context object.
+ * object must be closed with dtls_close_context().
 */
-dtls_context_t* dtls_new_context( void *app_data );
+int dtls_init_context( dtls_context_t *ctx,
+                       dtls_handler_t *h,
+                       void           *app_data );
 
 /**
- * Releases any storage that has been allocated for \p ctx.
+ * close a context object.
 */
-void dtls_free_context( dtls_context_t *ctx );
+void dtls_close_context( dtls_context_t *ctx );
 
 #define dtls_set_app_data(CTX,DATA) ((CTX)->app = (DATA))
 #define dtls_get_app_data(CTX)      ((CTX)->app)
-
-/** Sets the callback handler object for @p ctx to @p h. */
-static inline void dtls_set_handler( dtls_context_t *ctx,
-                                     dtls_handler_t *h )
-{
-    ctx->h = h;
-}
 
 /**
  * Establishes a DTLS channel with the specified remote peer @p dst.

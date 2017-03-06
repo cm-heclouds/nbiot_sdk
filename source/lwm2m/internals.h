@@ -292,21 +292,12 @@ coap_status_t observe_setParameters( lwm2m_context_t    *contextP,
 void observe_step( lwm2m_context_t *contextP,
                    time_t           currentTime,
                    time_t          *timeoutP );
-bool observe_handleNotify( lwm2m_context_t *contextP,
-                           void            *fromSessionH,
-                           coap_packet_t   *message,
-                           coap_packet_t   *response );
 lwm2m_observed_t* observe_findByUri( lwm2m_context_t *contextP,
                                      lwm2m_uri_t     *uriP );
 
 /*
  * defined in registration.c
 */
-coap_status_t registration_handleRequest( lwm2m_context_t *contextP,
-                                          lwm2m_uri_t     *uriP,
-                                          void            *fromSessionH,
-                                          coap_packet_t   *message,
-                                          coap_packet_t   *response );
 void registration_deregister( lwm2m_context_t *contextP,
                               lwm2m_server_t  *serverP );
 uint8_t registration_start( lwm2m_context_t *contextP );
@@ -337,11 +328,6 @@ coap_status_t bootstrap_handleDeleteAll( lwm2m_context_t *context,
                                          void            *fromSessionH );
 coap_status_t bootstrap_handleFinish( lwm2m_context_t *context,
                                       void            *fromSessionH );
-uint8_t bootstrap_handleRequest( lwm2m_context_t *contextP,
-                                 lwm2m_uri_t     *uriP,
-                                 void            *fromSessionH,
-                                 coap_packet_t   *message,
-                                 coap_packet_t   *response );
 void bootstrap_start( lwm2m_context_t * contextP );
 lwm2m_status_t bootstrap_getStatus( lwm2m_context_t * contextP );
 
@@ -382,11 +368,7 @@ void free_block1_buffer( lwm2m_block1_data_t *block1Data );
 /*
  * defined in utils.c
 */
-lwm2m_data_type_t utils_depthToDatatype( uri_depth_t depth );
-lwm2m_binding_t utils_stringToBinding( uint8_t *buffer,
-                                       size_t   length );
 lwm2m_media_type_t utils_convertMediaType( coap_content_type_t type );
-int utils_isAltPathValid( const char *altPath );
 int utils_stringCopy( char       *buffer,
                       size_t      length,
                       const char *str );
@@ -424,16 +406,6 @@ size_t utils_encodeInt( int64_t data,
                         uint8_t data_buffer[_PRV_64BIT_BUFFER_SIZE] );
 size_t utils_encodeFloat( double  data,
                           uint8_t data_buffer[_PRV_64BIT_BUFFER_SIZE] );
-size_t utils_base64ToOpaque( uint8_t  *dataP,
-                             size_t    dataLen,
-                             uint8_t **bufferP );
-size_t utils_opaqueToBase64( uint8_t  *dataP,
-                             size_t   dataLen,
-                             uint8_t **bufferP );
-size_t utils_base64Encode( uint8_t *dataP,
-                           size_t   dataLen,
-                           uint8_t *bufferP,
-                           size_t   bufferLen );
 lwm2m_server_t *utils_findServer( lwm2m_context_t *contextP,
                                   void            *fromSessionH );
 lwm2m_server_t *utils_findBootstrapServer( lwm2m_context_t *contextP,

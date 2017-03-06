@@ -524,195 +524,41 @@ int object_getRegisterPayload( lwm2m_context_t * contextP,
     return index;
 }
 
-static lwm2m_list_t * prv_findServerInstance( lwm2m_object_t * objectP,
-                                              uint16_t shortID )
+int object_getServers( lwm2m_context_t *contextP )
 {
-    lwm2m_list_t * instanceP;
-
-    instanceP = objectP->instanceList;
-    while ( NULL != instanceP )
-    {
-        int64_t value;
-        lwm2m_data_t * dataP;
-        int size;
-
-        size = 1;
-        dataP = lwm2m_data_new( size );
-        if ( dataP == NULL ) return NULL;
-        dataP->id = LWM2M_SERVER_SHORT_ID_ID;
-
-        if ( objectP->readFunc( instanceP->id, &size, &dataP, objectP ) != COAP_205_CONTENT )
-        {
-            lwm2m_data_free( size, dataP );
-            return NULL;
-        }
-
-        if ( 1 == lwm2m_data_decode_int( dataP, &value ) )
-        {
-            if ( value == shortID )
-            {
-                lwm2m_data_free( size, dataP );
-                break;
-            }
-        }
-        lwm2m_data_free( size, dataP );
-        instanceP = instanceP->next;
-    }
-
-    return instanceP;
-}
-
-static int prv_getMandatoryInfo( lwm2m_object_t * objectP,
-                                 uint16_t instanceID,
-                                 lwm2m_server_t * targetP )
-{
-    lwm2m_data_t * dataP;
-    int size;
-    int64_t value;
-
-    size = 2;
-    dataP = lwm2m_data_new( size );
-    if ( dataP == NULL ) return -1;
-    dataP[0].id = LWM2M_SERVER_LIFETIME_ID;
-    dataP[1].id = LWM2M_SERVER_BINDING_ID;
-
-    if ( objectP->readFunc( instanceID, &size, &dataP, objectP ) != COAP_205_CONTENT )
-    {
-        lwm2m_data_free( size, dataP );
-        return -1;
-    }
-
-    if ( 0 == lwm2m_data_decode_int( dataP, &value )
-         || value < 0 || value >0xFFFFFFFF )             /* This is an implementation limit */
-    {
-        lwm2m_data_free( size, dataP );
-        return -1;
-    }
-    targetP->lifetime = value;
-
-    targetP->binding = utils_stringToBinding( dataP[1].value.asBuffer.buffer, dataP[1].value.asBuffer.length );
-
-    lwm2m_data_free( size, dataP );
-
-    if ( targetP->binding == BINDING_UNKNOWN )
-    {
-        return -1;
-    }
-
-    return 0;
-}
-
-int object_getServers( lwm2m_context_t * contextP )
-{
-    lwm2m_object_t * objectP;
-    lwm2m_object_t * securityObjP = NULL;
-    lwm2m_object_t * serverObjP = NULL;
-    lwm2m_list_t * securityInstP;   /* instanceID of the server in the LWM2M Security Object */
+    lwm2m_server_t *targetP;
+    lwm2m_userdata_t *userData;
 
     LOG( "Entering" );
-    for ( objectP = contextP->objectList; objectP != NULL; objectP = objectP->next )
+    if ( NULL == contextP->userData )
     {
-        if ( objectP->objID == LWM2M_SECURITY_OBJECT_ID )
-        {
-            securityObjP = objectP;
-        }
-        else if ( objectP->objID == LWM2M_SERVER_OBJECT_ID )
-        {
-            serverObjP = objectP;
-        }
+        return -1;
     }
 
-    if ( NULL == securityObjP ) return -1;
-
-    securityInstP = securityObjP->instanceList;
-    while ( securityInstP != NULL )
+    userData = (lwm2m_userdata_t*)contextP->userData;
+    if ( userData->uri == NULL ||
+         LWM2M_UINT32(userData->lifetime) == 0 )
     {
-        if ( LWM2M_LIST_FIND( contextP->bootstrapServerList, securityInstP->id ) == NULL
-             && LWM2M_LIST_FIND( contextP->serverList, securityInstP->id ) == NULL )
-        {
-            /* This server is new. eg created by last bootstrap */
+        return -1;
+    }
 
-            lwm2m_data_t * dataP;
-            int size;
-            lwm2m_server_t * targetP;
-            bool isBootstrap;
-            int64_t value = 0;
+    targetP = (lwm2m_server_t *)nbiot_malloc( sizeof(lwm2m_server_t) );
+    if ( targetP == NULL )
+    {
+        return -1;
+    }
 
-            size = 3;
-            dataP = lwm2m_data_new( size );
-            if ( dataP == NULL ) return -1;
-            dataP[0].id = LWM2M_SECURITY_BOOTSTRAP_ID;
-            dataP[1].id = LWM2M_SECURITY_SHORT_SERVER_ID;
-            dataP[2].id = LWM2M_SECURITY_HOLD_OFF_ID;
-
-            if ( securityObjP->readFunc( securityInstP->id, &size, &dataP, securityObjP ) != COAP_205_CONTENT )
-            {
-                lwm2m_data_free( size, dataP );
-                return -1;
-            }
-
-            targetP = (lwm2m_server_t *)nbiot_malloc( sizeof(lwm2m_server_t) );
-            if ( targetP == NULL )
-            {
-                lwm2m_data_free( size, dataP );
-                return -1;
-            }
-            nbiot_memzero( targetP, sizeof(lwm2m_server_t) );
-            targetP->secObjInstID = securityInstP->id;
-
-            if ( 0 == lwm2m_data_decode_bool( dataP + 0, &isBootstrap ) )
-            {
-                nbiot_free( targetP );
-                lwm2m_data_free( size, dataP );
-                return -1;
-            }
-
-            if ( 0 == lwm2m_data_decode_int( dataP + 1, &value )
-                 || value < (isBootstrap ? 0 : 1) || value > 0xFFFF )                /* 0 is forbidden as a Short Server ID */
-            {
-                nbiot_free( targetP );
-                lwm2m_data_free( size, dataP );
-                return -1;
-            }
-            targetP->shortID = (uint16_t)value;
-
-            if ( isBootstrap == true )
-            {
-                if ( 0 == lwm2m_data_decode_int( dataP + 2, &value )
-                     || value < 0 || value > 0xFFFFFFFF )             /* This is an implementation limit */
-                {
-                    nbiot_free( targetP );
-                    lwm2m_data_free( size, dataP );
-                    return -1;
-                }
-                /* lifetime of a bootstrap server is set to ClientHoldOffTime */
-                targetP->lifetime = value;
-
-                contextP->bootstrapServerList = (lwm2m_server_t*)LWM2M_LIST_ADD( contextP->bootstrapServerList, targetP );
-            }
-            else
-            {
-                lwm2m_list_t * serverInstP;     /* instanceID of the server in the LWM2M Server Object */
-
-                serverInstP = prv_findServerInstance( serverObjP, targetP->shortID );
-                if ( serverInstP == NULL )
-                {
-                    nbiot_free( targetP );
-                    lwm2m_data_free( size, dataP );
-                    return -1;
-                }
-                if ( 0 != prv_getMandatoryInfo( serverObjP, serverInstP->id, targetP ) )
-                {
-                    nbiot_free( targetP );
-                    lwm2m_data_free( size, dataP );
-                    return -1;
-                }
-                targetP->status = STATE_DEREGISTERED;
-                contextP->serverList = (lwm2m_server_t*)LWM2M_LIST_ADD( contextP->serverList, targetP );
-            }
-            lwm2m_data_free( size, dataP );
-        }
-        securityInstP = securityInstP->next;
+    nbiot_memzero( targetP, sizeof(lwm2m_server_t) );
+    targetP->binding = BINDING_U; /* 目前只支持UDP */
+    targetP->lifetime = LWM2M_UINT32(userData->lifetime);
+    if ( userData->flag & LWM2M_USERDATA_BOOTSTRAP )
+    {
+        contextP->bootstrapServerList = (lwm2m_server_t*)LWM2M_LIST_ADD( contextP->bootstrapServerList, targetP );
+    }
+    else
+    {
+        targetP->status = STATE_DEREGISTERED;
+        contextP->serverList = (lwm2m_server_t*)LWM2M_LIST_ADD( contextP->serverList, targetP );
     }
 
     return 0;

@@ -39,10 +39,10 @@ extern "C" {
 /*
  * Standard Object IDs
 */
-#define LWM2M_SECURITY_OBJECT_ID            0
-#define LWM2M_SERVER_OBJECT_ID              1
+#define LWM2M_SECURITY_OBJECT_ID            0 /* not supported */
+#define LWM2M_SERVER_OBJECT_ID              1 /* not supported */
 #define LWM2M_ACL_OBJECT_ID                 2 /* not supported */
-#define LWM2M_DEVICE_OBJECT_ID              3
+#define LWM2M_DEVICE_OBJECT_ID              3 /* only supported */
 #define LWM2M_CONN_MONITOR_OBJECT_ID        4 /* not supported */
 #define LWM2M_FIRMWARE_UPDATE_OBJECT_ID     5 /* not supported */
 #define LWM2M_LOCATION_OBJECT_ID            6 /* not supported */
@@ -505,6 +505,27 @@ typedef struct
     void                      *userData;
 } lwm2m_context_t;
 
+typedef enum
+{
+    LWM2M_USERDATA_BOOTSTRAP = 0x1,
+    LWM2M_USERDATA_STORING   = 0x2
+} lwm2m_userdata_flag_t;
+
+typedef uint8_t uint24_t[3];
+typedef struct
+{
+    const char *uri;
+    uint24_t    lifetime;
+    uint8_t     flag;
+} lwm2m_userdata_t;
+
+#define LWM2M_UINT32(x)   (((uint32_t)(x)[0]<<16)| \
+                           ((uint32_t)(x)[1]<< 8)| \
+                           ((uint32_t)(x)[2]<< 0))
+#define LWM2M_UINT24(x,v) {(x)[0]=((v)>>16)&0xff; \
+                           (x)[1]=((v)>> 8)&0xff; \
+                           (x)[2]=((v)>> 0)&0xff;}
+
 /*
  * initialize a liblwm2m context.
 */
@@ -540,8 +561,7 @@ void lwm2m_handle_packet( lwm2m_context_t *contextP,
 int lwm2m_configure( lwm2m_context_t *contextP,
                      const char      *endpointName,
                      const char      *authCode,
-                     uint16_t         numObject,
-                     lwm2m_object_t  *objectList[] );
+                     lwm2m_object_t  *objectList );
 
 /*
 * send a registration update to the server specified by the server short identifier

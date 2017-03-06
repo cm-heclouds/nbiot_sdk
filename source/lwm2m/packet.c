@@ -33,22 +33,22 @@ static coap_status_t handle_request( lwm2m_context_t * contextP,
     {
         case LWM2M_URI_FLAG_DM:
         {
-                                  lwm2m_server_t * serverP;
+            lwm2m_server_t * serverP;
 
-                                  serverP = utils_findServer( contextP, fromSessionH );
-                                  if ( serverP != NULL )
-                                  {
-                                      result = dm_handleRequest( contextP, uriP, serverP, message, response );
-                                  }
+            serverP = utils_findServer( contextP, fromSessionH );
+            if ( serverP != NULL )
+            {
+                result = dm_handleRequest( contextP, uriP, serverP, message, response );
+            }
 #ifdef LWM2M_BOOTSTRAP
-                                  else
-                                  {
-                                      serverP = utils_findBootstrapServer( contextP, fromSessionH );
-                                      if ( serverP != NULL )
-                                      {
-                                          result = bootstrap_handleCommand( contextP, uriP, serverP, message, response );
-                                      }
-                                  }
+            else
+            {
+                serverP = utils_findBootstrapServer( contextP, fromSessionH );
+                if ( serverP != NULL )
+                {
+                    result = bootstrap_handleCommand( contextP, uriP, serverP, message, response );
+                }
+            }
 #endif
         }
         break;

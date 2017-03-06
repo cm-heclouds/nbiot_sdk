@@ -88,16 +88,6 @@ static const unsigned char cert_asn1_header[] =
     0x04              /* uncompressed, followed by the r und s values of the public key */
 };
 
-static inline dtls_context_t* malloc_context( void )
-{
-    return (dtls_context_t *)nbiot_malloc( sizeof(dtls_context_t) );
-}
-
-static inline void free_context( dtls_context_t *context )
-{
-    nbiot_free( context );
-}
-
 /* Calls cb_alert() with given arguments if defined, otherwise an
  * error message is logged and the result is -1. This is just an
  * internal helper.
@@ -2658,36 +2648,33 @@ int dtls_handle_message( dtls_context_t *ctx,
     return 0;
 }
 
-dtls_context_t* dtls_new_context( void *app_data )
+int dtls_init_context( dtls_context_t *ctx,
+                       dtls_handler_t *h,
+                       void           *app_data )
 {
-    dtls_context_t *c;
-    clock_t now = nbiot_tick();
+    if ( NULL == ctx )
+    {
+        dtls_alert( "DTLS context is null.\n" );
+        return -1;
+    }
 
-    c = malloc_context( );
-    if ( !c )
-        goto error;
+    nbiot_memzero( ctx, sizeof(dtls_context_t) );
+    if ( !dtls_prng(ctx->cookie_secret,DTLS_COOKIE_SECRET_LENGTH) )
+    {
+        return -1;
+    }
 
-    nbiot_memzero( c, sizeof(dtls_context_t) );
-    c->app = app_data;
+    /* initialize */
+    ctx->h = h;
+    ctx->app = app_data;
+    LIST_STRUCT_INIT( ctx, peers );
+    LIST_STRUCT_INIT( ctx, sendqueue );
+    ctx->cookie_secret_age = nbiot_tick();
 
-    LIST_STRUCT_INIT( c, peers );
-    LIST_STRUCT_INIT( c, sendqueue );
-
-    if ( dtls_prng( c->cookie_secret, DTLS_COOKIE_SECRET_LENGTH ) )
-        c->cookie_secret_age = now;
-    else
-        goto error;
-
-    return c;
-
-error:
-    dtls_alert( "cannot create DTLS context\n" );
-    if ( c )
-        dtls_free_context( c );
-    return NULL;
+    return 0;
 }
 
-void dtls_free_context( dtls_context_t *ctx )
+void dtls_close_context( dtls_context_t *ctx )
 {
     dtls_peer_t *p;
 
@@ -2698,8 +2685,6 @@ void dtls_free_context( dtls_context_t *ctx )
 
     for ( p = list_head( ctx->peers ); p; p = list_item_next( p ) )
         dtls_destroy_peer( ctx, p, 1 );
-
-    free_context( ctx );
 }
 
 int dtls_connect_peer( dtls_context_t *ctx,

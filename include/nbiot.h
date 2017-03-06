@@ -104,8 +104,7 @@ typedef struct nbiot_device_t nbiot_device_t;
  * @return 成功返回NBIOT_ERR_OK
 **/
 int nbiot_device_create( nbiot_device_t **dev,
-                         uint16_t         port,
-                         const char      *serial_number );
+                         uint16_t         local_port );
 
 /**
  * 销毁OneNET接入设备实例
@@ -118,14 +117,12 @@ void nbiot_device_destroy( nbiot_device_t *dev );
  * @param dev 指向nbiot_device_t的内存
  *        server_uri 服务链接地址（例如coap://127.0.0.1:5683）
  *                   在运行过程中必须有效
- *        keep_alive 保活时间
- *        bootstrap  标记（暂不支持bootstrap）
+ *        life_time  保活时间（秒）
  * @return 成功返回NBIOT_ERR_OK
 **/
 int nbiot_device_connect( nbiot_device_t *dev,
                           const char     *server_uri,
-                          time_t          keep_alive,
-                          bool            bootstrap );
+                          time_t          life_time );
 
 /**
  * 关闭与OneNET服务的连接

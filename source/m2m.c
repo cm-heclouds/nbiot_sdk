@@ -33,7 +33,7 @@ uint8_t lwm2m_buffer_send( void    *session,
 #ifdef HAVE_DTLS
     conn = (connection_t*)session;
     data = (nbiot_device_t*)userdata;
-    ret = dtls_write( data->dtls,
+    ret = dtls_write( &data->dtls,
                       conn->addr,
                       buffer,
                       length );
@@ -81,7 +81,6 @@ void* lwm2m_connect_server( uint16_t sec_instid,
     const char *port;
     connection_t *conn;
     nbiot_device_t *dev;
-    lwm2m_object_t *sec_obj;
 
     dev = (nbiot_device_t*)userdata;
     if ( NULL == dev )
@@ -89,13 +88,7 @@ void* lwm2m_connect_server( uint16_t sec_instid,
         return NULL;
     }
 
-    sec_obj = nbiot_object_find( dev, LWM2M_SECURITY_OBJECT_ID );
-    if ( NULL == sec_obj )
-    {
-        return NULL;
-    }
-
-    uri = get_server_uri( sec_obj, sec_instid );
+    uri = dev->data.uri;
     if ( NULL == uri )
     {
         return NULL;

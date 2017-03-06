@@ -162,44 +162,40 @@ static int prv_refreshServerList( lwm2m_context_t * contextP )
     return object_getServers( contextP );
 }
 
-int lwm2m_configure( lwm2m_context_t * contextP,
-                     const char * endpointName,
-                     const char * authCode,
-                     uint16_t numObject,
-                     lwm2m_object_t * objectList[] )
+int lwm2m_configure( lwm2m_context_t *contextP,
+                     const char      *endpointName,
+                     const char      *authCode,
+                     lwm2m_object_t  *objectList )
 {
-    int i;
-    uint8_t found;
+    lwm2m_userdata_t *userData;
 
-    LOG_ARG( "endpointName: \"%s\", authCode: \"%s\", msisdn: \"null\", altPath: \"null\", numObject: %d", endpointName, authCode, numObject );
+    LOG_ARG( "endpointName: \"%s\", authCode: \"%s\", msisdn: \"null\", altPath: \"null\"", endpointName, authCode );
     /* This API can be called only once for now */
     if ( contextP->endpointName != NULL ||
          contextP->authCode != NULL ||
-         contextP->objectList != NULL ) return COAP_400_BAD_REQUEST;
-
-    if ( endpointName == NULL ) return COAP_400_BAD_REQUEST;
-    if ( authCode == NULL ) return COAP_400_BAD_REQUEST;
-    if ( numObject < 3 ) return COAP_400_BAD_REQUEST;
-
-    /* Check that mandatory objects are present */
-    found = 0;
-    for ( i = 0; i < numObject; i++ )
+         contextP->objectList != NULL )
     {
-        if ( objectList[i]->objID == LWM2M_SECURITY_OBJECT_ID ) found |= 0x01;
-        if ( objectList[i]->objID == LWM2M_SERVER_OBJECT_ID ) found |= 0x02;
-        if ( objectList[i]->objID == LWM2M_DEVICE_OBJECT_ID ) found |= 0x04;
+        return COAP_400_BAD_REQUEST;
     }
 
-    if ( found != 0x07 ) return COAP_400_BAD_REQUEST;
+    if ( endpointName == NULL ||
+         authCode == NULL ||
+         objectList == NULL ||
+         contextP->userData == NULL )
+    {
+        return COAP_400_BAD_REQUEST;
+    }
+
+    userData = (lwm2m_userdata_t*)contextP->userData;
+    if ( userData->uri == NULL ||
+         LWM2M_UINT32(userData->lifetime) == 0 )
+    {
+        return COAP_400_BAD_REQUEST;
+    }
 
     contextP->endpointName = endpointName;
     contextP->authCode = authCode;
-
-    for ( i = 0; i < numObject; i++ )
-    {
-        objectList[i]->next = NULL;
-        contextP->objectList = (lwm2m_object_t *)LWM2M_LIST_ADD( contextP->objectList, objectList[i] );
-    }
+    contextP->objectList = objectList;
 
     return COAP_NO_ERROR;
 }

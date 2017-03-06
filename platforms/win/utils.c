@@ -188,7 +188,7 @@ int nbiot_isspace( char ch )
 int nbiot_atoi( const char *str )
 {
     int ret;
-    int neg;
+    int neg = 0;
 
     ret = 0;
     if ( str )

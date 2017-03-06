@@ -6,37 +6,22 @@
 #include <nbiot.h>
 #include "struct.h"
 
-#define DEFAULT_SERVER_ID   1
-#define DEFAULT_BOOTSTRAP   false
-#define DEFAULT_BINDING     "U"
-#define DEFAULT_STORING     true
+/* 全局唯一实例 */
+static nbiot_device_t g_dev;
 
-lwm2m_object_t* nbiot_object_find( nbiot_device_t *dev,
-                                   uint16_t        objid )
+static inline lwm2m_object_t* nbiot_object_find( nbiot_device_t *dev,
+                                                 uint16_t        objid )
 {
-    int i;
-
     if ( NULL == dev )
     {
         return NULL;
     }
 
-    for ( i = 0; i < (int)dev->obj_num; ++i )
-    {
-        if ( dev->obj_arr[i] )
-        {
-            if ( dev->obj_arr[i]->objID == objid )
-            {
-                return dev->obj_arr[i];
-            }
-        }
-    }
-
-    return NULL;
+    return (lwm2m_object_t*)LWM2M_LIST_FIND( dev->objlist, objid );
 }
 
-int nbiot_object_add( nbiot_device_t *dev,
-                      lwm2m_object_t *obj )
+static inline int nbiot_object_add( nbiot_device_t *dev,
+                                    lwm2m_object_t *obj )
 {
     if ( NULL == dev ||
          NULL == obj )
@@ -44,53 +29,17 @@ int nbiot_object_add( nbiot_device_t *dev,
         return NBIOT_ERR_BADPARAM;
     }
 
-    if ( dev->obj_num >= dev->obj_max )
-    {
-        size_t num;
-        lwm2m_object_t **arr;
+    dev->objlist = (lwm2m_object_t*)LWM2M_LIST_ADD( dev->objlist, obj );
 
-        num = dev->obj_max * 2;
-        arr = (lwm2m_object_t**)nbiot_malloc( num*sizeof(lwm2m_object_t*) );
-        if ( NULL == arr )
-        {
-            return NBIOT_ERR_NO_MEMORY;
-        }
-
-        nbiot_memzero( arr, num*sizeof(lwm2m_object_t*) );
-        nbiot_memmove( arr,
-                       dev->obj_arr,
-                       dev->obj_num*sizeof(lwm2m_object_t*) );
-        nbiot_free( dev->obj_arr );
-        dev->obj_arr = arr;
-        dev->obj_max = num;
-    }
-
-    dev->obj_arr[dev->obj_num++] = obj;
     return NBIOT_ERR_OK;
 }
 
-void nbiot_object_del( nbiot_device_t *dev,
-                       lwm2m_object_t *obj )
+static inline void nbiot_object_del( nbiot_device_t *dev,
+                                     lwm2m_object_t *obj )
 {
     if ( NULL != dev && NULL != obj )
     {
-        int i;
-
-        for ( i = 0; i < (int)dev->obj_num; ++i )
-        {
-            if ( obj == dev->obj_arr[i] )
-            {
-                break;
-            }
-        }
-
-        if ( i < (int)dev->obj_num )
-        {
-            nbiot_memmove( dev->obj_arr+i,
-                           dev->obj_arr+i+1,
-                           sizeof(lwm2m_object_t*)*(dev->obj_num-i-1) );
-            dev->obj_arr[--dev->obj_num] = NULL;
-        }
+        dev->objlist = (lwm2m_object_t*)LWM2M_LIST_RM( dev->objlist, obj->objID, obj );
     }
 }
 
@@ -148,8 +97,7 @@ static int read_from_peer( dtls_context_t  *ctx,
     nbiot_device_t *dev;
 
     dev = (nbiot_device_t*)ctx->app;
-    if ( NULL == dev ||
-         NULL == dev->lwm2m )
+    if ( NULL == dev )
     {
         return -1;
     }
@@ -160,7 +108,7 @@ static int read_from_peer( dtls_context_t  *ctx,
         return -1;
     }
 
-    lwm2m_handle_packet( dev->lwm2m,
+    lwm2m_handle_packet( &dev->lwm2m,
                          data,
                          len,
                          conn );
@@ -177,100 +125,62 @@ static dtls_handler_t dtls_cb =
 #endif
 
 int nbiot_device_create( nbiot_device_t **dev,
-                         uint16_t         port,
-                         const char      *serial_number )
+                         uint16_t         local_port )
 {
     nbiot_device_t *tmp;
-    lwm2m_object_t *dev_obj;
 
     if ( NULL == dev )
     {
         return NBIOT_ERR_BADPARAM;
     }
 
-    tmp = nbiot_malloc( sizeof(nbiot_device_t) );
+    tmp = &g_dev;
     if ( NULL == tmp )
     {
         return NBIOT_ERR_NO_MEMORY;
     }
-
-    nbiot_memzero( tmp, sizeof(nbiot_device_t) );
-    tmp->obj_max = 4;
-    tmp->obj_num = 0;
-    tmp->obj_arr = (lwm2m_object_t**)nbiot_malloc( tmp->obj_max*sizeof(lwm2m_object_t*) );
-    if ( NULL == tmp->obj_arr )
+    else
     {
-        nbiot_free( tmp );
-
-        return NBIOT_ERR_NO_MEMORY;
+        nbiot_memzero( tmp, sizeof(nbiot_device_t) );
     }
 
-    nbiot_memzero( tmp->obj_arr, tmp->obj_max*sizeof(lwm2m_object_t*) );
     if ( nbiot_udp_create( &tmp->sock ) )
     {
-        nbiot_free( tmp->obj_arr );
         nbiot_free( tmp );
 
         return NBIOT_ERR_INTERNAL;
     }
 
-    if ( nbiot_udp_bind(tmp->sock,NULL,port) )
+    if ( nbiot_udp_bind(tmp->sock,NULL,local_port) )
     {
-        nbiot_free( tmp->obj_arr );
-        nbiot_free( tmp );
-
-        return NBIOT_ERR_INTERNAL;
-    }
-
-    dev_obj = create_device_object( serial_number );
-    if ( NULL == dev_obj )
-    {
-        nbiot_udp_close( tmp->sock );
         nbiot_free( tmp );
 
         return NBIOT_ERR_INTERNAL;
     }
 
 #ifdef HAVE_DTLS
-    tmp->dtls = dtls_new_context( tmp );
-    if ( NULL == tmp->dtls )
+    if ( dtls_init_context(&tmp->dtls,&dtls_cb,tmp) )
     {
         nbiot_udp_close( tmp->sock );
         nbiot_free( tmp );
 
         return NBIOT_ERR_DTLS;
     }
-    dtls_set_handler( tmp->dtls, &dtls_cb );
 #endif
 
-    tmp->lwm2m = (lwm2m_context_t*)nbiot_malloc( sizeof(lwm2m_context_t) );
-    if ( NULL == tmp->lwm2m )
-    {
-        nbiot_udp_close( tmp->sock );
-        nbiot_free( tmp );
-
-        return NBIOT_ERR_NO_MEMORY;
-    }
-
-    if ( lwm2m_init(tmp->lwm2m,tmp) )
+    if ( lwm2m_init(&tmp->lwm2m,tmp) )
     {
 #ifdef HAVE_DTLS
-        dtls_free_context( tmp->dtls );
+        dtls_close_context( &tmp->dtls );
 #endif
-        clear_device_object( dev_obj );
         nbiot_udp_close( tmp->sock );
-        lwm2m_close( tmp->lwm2m );
-        nbiot_free( tmp->obj_arr );
-        nbiot_free( tmp->lwm2m );
-        nbiot_free( dev_obj );
+        lwm2m_close( &tmp->lwm2m );
         nbiot_free( tmp );
 
         return NBIOT_ERR_INTERNAL;
     }
 
     *dev = tmp;
-    nbiot_object_add( *dev, dev_obj );
-
     return NBIOT_ERR_OK;
 }
 
@@ -278,103 +188,71 @@ void nbiot_device_destroy( nbiot_device_t *dev )
 {
     if ( NULL != dev )
     {
-        int i;
+        lwm2m_object_t *obj;
 
         /* close */
         nbiot_device_close( dev );
 
         /* objects */
-        for ( i = 0; i < (int)dev->obj_num; ++i )
+        while ( dev->objlist )
         {
-            if ( NULL != dev->obj_arr[i] )
+            obj = dev->objlist;
+            dev->objlist = obj->next;
+
+            switch ( obj->objID )
             {
-                switch ( dev->obj_arr[i]->objID )
+                case LWM2M_SECURITY_OBJECT_ID:
+                case LWM2M_SERVER_OBJECT_ID:
+                case LWM2M_ACL_OBJECT_ID:
+                case LWM2M_DEVICE_OBJECT_ID:
+                case LWM2M_CONN_MONITOR_OBJECT_ID:
+                case LWM2M_FIRMWARE_UPDATE_OBJECT_ID:
+                case LWM2M_LOCATION_OBJECT_ID:
+                case LWM2M_CONN_STATS_OBJECT_ID:
                 {
-                    case LWM2M_SECURITY_OBJECT_ID:
-                        clear_security_object( dev->obj_arr[i] );
-                        break;
-
-                    case LWM2M_SERVER_OBJECT_ID:
-                        clear_server_object( dev->obj_arr[i] );
-                        break;
-
-                    case LWM2M_DEVICE_OBJECT_ID:
-                        clear_device_object( dev->obj_arr[i] );
-                        break;
-
-                    case LWM2M_ACL_OBJECT_ID:
-                    case LWM2M_CONN_MONITOR_OBJECT_ID:
-                    case LWM2M_FIRMWARE_UPDATE_OBJECT_ID:
-                    case LWM2M_LOCATION_OBJECT_ID:
-                    case LWM2M_CONN_STATS_OBJECT_ID:
-                        /* not supported */
-                        break;
-
-                    default:
-                        clear_resource_object( dev->obj_arr[i] );
-                        break;
+                    /* not supported */
                 }
+                break;
 
-                nbiot_free( dev->obj_arr[i] );
-                dev->obj_arr[i] = NULL;
+                default:
+                {
+                    clear_resource_object( obj );
+                }
+                break;
             }
+
+            nbiot_free( obj );
         }
 
         /* free */
-        nbiot_free( dev->obj_arr );
         nbiot_free( dev->addr );
-        nbiot_free( dev );
+        /* g_dev */
+        /* nbiot_free( dev ); */
     }
 }
 
 int nbiot_device_connect( nbiot_device_t *dev,
                           const char     *server_uri,
-                          time_t          keep_alive,
-                          bool            bootstrap )
+                          time_t          life_time )
 {
-    lwm2m_object_t *sec_obj;
-    lwm2m_object_t *svr_obj;
-
     if ( NULL == dev ||
          NULL == server_uri )
     {
         return NBIOT_ERR_BADPARAM;
     }
 
-    sec_obj = create_security_object( DEFAULT_SERVER_ID,
-                                      server_uri,
-                                      (uint32_t)keep_alive,
-                                      DEFAULT_BOOTSTRAP,
-                                      false );
-    if ( NULL == sec_obj )
-    {
-        return NBIOT_ERR_INTERNAL;
-    }
-
-    if ( nbiot_object_add(dev,sec_obj) )
-    {
-        clear_security_object( sec_obj );
-        nbiot_free( sec_obj );
-
-        return NBIOT_ERR_INTERNAL;
-    }
-
-    svr_obj = create_server_object( DEFAULT_SERVER_ID,
-                                    DEFAULT_BINDING,
-                                    (uint32_t)keep_alive,
-                                    DEFAULT_STORING );
-    if ( NULL == svr_obj )
-    {
-        return NBIOT_ERR_INTERNAL;
-    }
-
-    if ( nbiot_object_add(dev,svr_obj) )
-    {
-        clear_server_object( svr_obj );
-        nbiot_free( svr_obj );
-
-        return NBIOT_ERR_INTERNAL;
-    }
+    /*
+     * 初始化
+     * 默认值：storing  = true
+     *         boostrap = true
+     *         uri_free = false
+    */
+    dev->data.uri = server_uri;
+#ifdef LWM2M_BOOTSTRAP
+    dev->data.flag |= LWM2M_USERDATA_BOOTSTRAP;
+#endif
+    dev->data.flag |= LWM2M_USERDATA_STORING;
+    LWM2M_UINT24( dev->data.lifetime, life_time );
 
     return NBIOT_ERR_OK;
 }
@@ -386,24 +264,18 @@ int nbiot_device_close( nbiot_device_t *dev )
         return NBIOT_ERR_BADPARAM;
     }
 
-    if ( NULL != dev->lwm2m )
-    {
-        lwm2m_close( dev->lwm2m );
-        dev->lwm2m = NULL;
-    }
-
     if ( NULL != dev->sock )
     {
         nbiot_udp_close( dev->sock );
         dev->sock = NULL;
     }
 
+    lwm2m_close( &dev->lwm2m );
+    nbiot_memzero( &dev->lwm2m, sizeof(dev->lwm2m) );
+
 #ifdef HAVE_DTLS
-    if ( NULL != dev->dtls )
-    {
-        dtls_free_context( dev->dtls );
-        dev->dtls = NULL;
-    }
+    dtls_close_context( &dev->dtls );
+    nbiot_memzero( &dev->dtls, sizeof(dev->dtls) );
 #endif
 
     if ( NULL != dev->connlist )
@@ -415,11 +287,11 @@ int nbiot_device_close( nbiot_device_t *dev )
     return NBIOT_ERR_OK;
 }
 
-int nbiot_device_configure( nbiot_device_t *dev,
-                            const char     *endpoint_name,
-                            const char     *auth_code,
-                            nbiot_resource_t    *res_array[],
-                            size_t          res_array_num )
+int nbiot_device_configure( nbiot_device_t   *dev,
+                            const char       *endpoint_name,
+                            const char       *auth_code,
+                            nbiot_resource_t *res_array[],
+                            size_t            res_array_num )
 {
     int i;
     int ret;
@@ -475,11 +347,10 @@ int nbiot_device_configure( nbiot_device_t *dev,
         }
     }
 
-    if ( lwm2m_configure(dev->lwm2m,
-                         endpoint_name,
-                         auth_code,
-                         dev->obj_num,
-                         dev->obj_arr) )
+    if ( lwm2m_configure(&dev->lwm2m,
+                          endpoint_name,
+                          auth_code,
+                          dev->objlist) )
     {
         return NBIOT_ERR_INTERNAL;
     }
@@ -500,7 +371,7 @@ int nbiot_device_step( nbiot_device_t *dev,
         return NBIOT_ERR_BADPARAM;
     }
 
-    if ( lwm2m_step(dev->lwm2m,&timeout) )
+    if ( lwm2m_step(&dev->lwm2m,&timeout) )
     {
         return NBIOT_ERR_INTERNAL;
     }
@@ -523,7 +394,7 @@ int nbiot_device_step( nbiot_device_t *dev,
             if ( NULL != conn )
             {
 #ifdef HAVE_DTLS
-                ret = dtls_handle_message( dev->dtls,
+                ret = dtls_handle_message( &dev->dtls,
                                            conn->addr,
                                            buff,
                                            read );
@@ -532,7 +403,7 @@ int nbiot_device_step( nbiot_device_t *dev,
                     return NBIOT_ERR_DTLS;
                 }
 #else
-                lwm2m_handle_packet( dev->lwm2m,
+                lwm2m_handle_packet( &dev->lwm2m,
                                      buff,
                                      read,
                                      conn );
@@ -545,7 +416,7 @@ int nbiot_device_step( nbiot_device_t *dev,
         }
     } while(1);
 
-    if ( STATE_RESET == dev->lwm2m->state )
+    if ( STATE_RESET == dev->lwm2m.state )
     {
         return NBIOT_ERR_SERVER_RESET;
     }
@@ -586,7 +457,7 @@ int nbiot_device_notify( nbiot_device_t *dev,
     uri.flag = LWM2M_URI_FLAG_OBJECT_ID |
                LWM2M_URI_FLAG_INSTANCE_ID |
                LWM2M_URI_FLAG_RESOURCE_ID;
-    lwm2m_resource_value_changed( dev->lwm2m, &uri );
+    lwm2m_resource_value_changed( &dev->lwm2m, &uri );
 
     return NBIOT_ERR_OK;
 }

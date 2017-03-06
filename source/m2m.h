@@ -60,68 +60,6 @@ connection_t* connection_remove( connection_t *connlist,
 void connection_destroy( connection_t *connlist );
 
 /**
- * 创建security object
- * @param svr_id  服务器id
- *        svr_uri 服务器链接地址(例如coap://127.0.0.1:5683)
- *                在运行过程中必须有效
- *        holdoff_time client关闭时间
- *        bootstrap 是否为bootstrap标记
- * @return 成功返回security object指针，否则返回NULL
-**/
-lwm2m_object_t* create_security_object( uint16_t    svr_id,
-                                        const char *svr_uri,
-                                        uint32_t    holdoff_time,
-                                        bool        bootstrap,
-                                        bool        svr_uri_free );
-
-/**
- * 清理security object
- * @param sec_obj 指向security object内存
-**/
-void clear_security_object( lwm2m_object_t *sec_obj );
-
-/**
- * 获取服务的coap链接
- * @param sec_obj 指向security object内存
- *        sec_instid security instance id
- * @return coap连接字符串，使用完需用lwm2m_free释放内存，失败返回NULL
-**/
-const char* get_server_uri( lwm2m_object_t *sec_obj,
-                            uint16_t        sec_instid );
-
-/**
- * 创建server object
- * @param svr_id 服务器id
- *        binding 传输形式（默认U）
- *        lifetime 生存时间（秒）
- *        storing 是否保存Notify
- * @return 成功返回server object指针，否则返回NULL
-**/
-lwm2m_object_t* create_server_object( uint16_t    svr_id,
-                                      const char *binding,
-                                      uint32_t    lifetime,
-                                      bool        storing );
-
-/**
- * 清理server object
- * @param svr_obj 指向server object内存
-**/
-void clear_server_object( lwm2m_object_t *svr_obj );
-
-/**
- * 创建device object
- * @param serial_number 序列号,在运行过程中必须有效
- * @return 成功返回device object指针，否则返回NULL
-**/
-lwm2m_object_t* create_device_object( const char *serial_number );
-
-/**
- * 清理device object
- * @param dev_obj 指向device object内存
-**/
-void clear_device_object( lwm2m_object_t *dev_obj );
-
-/**
  * 添加resource object
  * @param obj 指向lwm2m_object_t内存
  *        inst_id object instance id
