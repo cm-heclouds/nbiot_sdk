@@ -26,8 +26,8 @@ typedef struct connection_t
 /**
  * 创建连接，然后加入连接list中
  * @param connlist 连接list
- *        addr 目标地址
- *        port 目标端口
+ *        addr     目标地址
+ *        port     目标端口
  * @return 成功返回连接句柄，否则返回NULL
 **/
 connection_t* connection_create( connection_t   *connlist,
@@ -38,7 +38,7 @@ connection_t* connection_create( connection_t   *connlist,
 /**
  * 查找连接
  * @param connlist 连接list
- *        addr 指向socket地址信息的内存
+ *        addr     指向socket地址信息的内存
  * @return 成功返回连接句柄，否则返回NULL
 **/
 connection_t* connection_find( connection_t           *connlist,
@@ -47,7 +47,7 @@ connection_t* connection_find( connection_t           *connlist,
 /**
  * 移除连接
  * @param connlist 连接list
- *        conn 连接句柄
+ *        conn     连接句柄
  * @return 返回连接list
 **/
 connection_t* connection_remove( connection_t *connlist,
@@ -61,28 +61,29 @@ void connection_destroy( connection_t *connlist );
 
 /**
  * 添加resource object
- * @param obj 指向lwm2m_object_t内存
- *        inst_id object instance id
- *        res_id  resource id
- *        type    指向resource类型的内存
- *        value   指向resource值的内存
+ * @param obj  指向lwm2m_object_t内存
+ *        data 指向nbiot_resource_t内存
  * @return 成功返回NBIOT_ERR_OK
 **/
-int create_resource_object( lwm2m_object_t   *res_obj,
-                            nbiot_resource_t *resource );
+int create_resource_object( lwm2m_object_t   *obj,
+                            nbiot_resource_t *data );
 
 /**
  * 判定resource是否存在
+ * @param obj    指向lwm2m_object_t内存
+ *        instid object instance id
+ *        resid  resource id
+ * @return 存在返回true，否则返回false
 **/
-bool check_resource_object( lwm2m_object_t *res_obj,
-                            uint16_t        inst_id,
-                            uint16_t        res_id );
+bool check_resource_object( lwm2m_object_t *obj,
+                            uint16_t        instid,
+                            uint16_t        resid );
 
 /**
  * 清理resource object
  * @param obj 指向lwm2m_object_t内存
 **/
-void clear_resource_object( lwm2m_object_t *res_obj );
+void clear_resource_object( lwm2m_object_t *obj );
 
 #ifdef __cplusplus
 } /* extern "C" { */

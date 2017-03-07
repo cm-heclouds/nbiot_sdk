@@ -12,6 +12,7 @@
 #include <dtls.h>
 #endif
 
+/* 设备实例 */
 struct nbiot_device_t
 {
     lwm2m_userdata_t  data;

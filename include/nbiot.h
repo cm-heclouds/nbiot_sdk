@@ -36,9 +36,9 @@ extern "C" {
 **/
 typedef union nbiot_value_t
 {
-    bool  as_bool;
-    int   as_int;
-    float as_float;
+    bool     as_bool;
+    int64_t  as_int;
+    double   as_float;
 
     /* string */
     struct
