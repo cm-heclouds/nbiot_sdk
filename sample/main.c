@@ -286,16 +286,29 @@ int main( int argc, char *argv[] )
         i = 0;
         while ( i < life_time/10 )
         {
-            ret = nbiot_device_step( dev, 1 );
-            if ( ret )
+            int j = 100;
+            while ( j > 0 )
             {
-                nbiot_printf( "device step error, code = %d.\r\n", ret );
+                ret = nbiot_device_step( dev, 1 );
+                if ( ret )
+                {
+                    nbiot_printf( "device step error, code = %d.\r\n", ret );
+                    break;
+                }
+                else
+                {
+                    --j;
+                    nbiot_sleep( 10 );
+                }
+            }
+
+            if ( j > 0 )
+            {
                 break;
             }
             else
             {
                 ++i;
-                nbiot_sleep( 1000 );
             }
         }
 
@@ -303,6 +316,8 @@ int main( int argc, char *argv[] )
         {
             while ( i < life_time )
             {
+                int j = 100;
+
                 /* ipso digital input - digital input state */
                 dis.value.as_bool = rand()%2 > 0;
                 nbiot_device_notify( dev,
@@ -342,16 +357,28 @@ int main( int argc, char *argv[] )
                                      aicv.instid,
                                      aicv.resid );
 
-                ret = nbiot_device_step( dev, 1 );
-                if ( ret )
+                while ( j > 0 )
                 {
-                    nbiot_printf( "device step error, code = %d.\r\n", ret );
+                    ret = nbiot_device_step( dev, 1 );
+                    if ( ret )
+                    {
+                        nbiot_printf( "device step error, code = %d.\r\n", ret );
+                        break;
+                    }
+                    else
+                    {
+                        --j;
+                        nbiot_sleep( 10 );
+                    }
+                }
+
+                if ( j > 0 )
+                {
                     break;
                 }
                 else
                 {
                     ++i;
-                    nbiot_sleep( 1000 );
                 }
             }
         }
