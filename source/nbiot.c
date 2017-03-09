@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Copyright (c) 2017 China Mobile IOT.
  * All rights reserved.
 **/
@@ -32,15 +32,6 @@ static inline int nbiot_object_add( nbiot_device_t *dev,
     dev->objlist = (lwm2m_object_t*)LWM2M_LIST_ADD( dev->objlist, obj );
 
     return NBIOT_ERR_OK;
-}
-
-static inline void nbiot_object_del( nbiot_device_t *dev,
-                                     lwm2m_object_t *obj )
-{
-    if ( NULL != dev && NULL != obj )
-    {
-        dev->objlist = (lwm2m_object_t*)LWM2M_LIST_RM( dev->objlist, obj->objID, obj );
-    }
 }
 
 #ifdef HAVE_DTLS

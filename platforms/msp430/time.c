@@ -4,7 +4,7 @@
 **/
 
 #include <platform.h>
-#include <windows.h>
+#include <time.h>
 
 time_t nbiot_time( void )
 {
@@ -14,11 +14,11 @@ time_t nbiot_time( void )
 #ifdef HAVE_DTLS
 clock_t nbiot_tick( void )
 {
-    return GetTickCount();
+    return clock();
 }
 #endif
 
 void nbiot_sleep( int milliseconds )
 {
-    Sleep( milliseconds );
+    /* todo */
 }

@@ -4,16 +4,13 @@
 **/
 
 #include <platform.h>
-#include <winsock2.h>
 
 static bool _nbiot_init_state = false;
 void nbiot_init_environment( void )
 {
     if ( !_nbiot_init_state )
     {
-        WSADATA wsa;
-
-        WSAStartup( MAKEWORD(2,2), &wsa );
+        /* todo */
         _nbiot_init_state = true;
     }
 }
@@ -22,7 +19,7 @@ void nbiot_clear_environment( void )
 {
     if ( _nbiot_init_state )
     {
-        WSACleanup();
+        /* todo */
         _nbiot_init_state = false;
     }
 }

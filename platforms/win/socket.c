@@ -337,11 +337,6 @@ int nbiot_udp_recv( nbiot_socket_t    *sock,
     return NBIOT_ERR_OK;
 }
 
-size_t nbiot_sockaddr_size( const nbiot_sockaddr_t *addr )
-{
-    return sizeof(addr->addr);
-}
-
 bool nbiot_sockaddr_equal( const nbiot_sockaddr_t *addr1,
                            const nbiot_sockaddr_t *addr2 )
 {

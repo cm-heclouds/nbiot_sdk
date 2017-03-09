@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Copyright (c) 2017 China Mobile IOT.
  * All rights reserved.
 **/
@@ -13,6 +13,7 @@ time_t nbiot_time( void )
     return time( NULL );
 }
 
+#ifdef HAVE_DTLS
 clock_t nbiot_tick( void )
 {
     static clock_t clock_offset = 0;
@@ -24,8 +25,9 @@ clock_t nbiot_tick( void )
     }
     gettimeofday( &tv, NULL );
 
-    return (tv.tv_sec-clock_offset)*1000 + tv.tv_usec/1000;
+    return (tv.tv_sec-clock_offset)*CLOCK_PER_SECOND + tv.tv_usec*CLOCK_PER_SECOND/1000;
 }
+#endif
 
 void nbiot_sleep( int milliseconds )
 {

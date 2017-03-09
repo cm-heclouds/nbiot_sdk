@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Copyright (c) 2017 China Mobile IOT.
  * All rights reserved.
 **/
@@ -6,7 +6,9 @@
 #ifndef NBIOT_INClUDE_PLATFORM_H_
 #define NBIOT_INClUDE_PLATFORM_H_
 
-#if defined(NBIOT_OS_WIN) || defined(NBIOT_OS_POSIX)
+#if defined(NBIOT_WIN) ||\
+    defined(NBIOT_POSIX) ||\
+    defined(NBIOT_MSP430)
 #include <stddef.h>   /* for size_t */
 #include <stdint.h>   /* for integer types */
 #include <stdbool.h>  /* for bool */
@@ -50,11 +52,17 @@ void nbiot_free( void *ptr );
 **/
 time_t nbiot_time( void );
 
+#ifdef HAVE_DTLS
+#ifndef CLOCK_PER_SECOND
+#define CLOCK_PER_SECOND 1000
+#endif
+
 /**
  * 获取当前时刻
  * @return 返回当前时刻(毫秒)
 **/
 clock_t nbiot_tick( void );
+#endif
 
 /**
  * 休眠
@@ -136,12 +144,6 @@ int nbiot_udp_recv( nbiot_socket_t    *sock,
                     size_t             size,
                     size_t            *read,
                     nbiot_sockaddr_t **src );
-
-/**
- * 获取nbiot_sockaddr_t的结构体大小
- * @return 返回nbiot_sockaddr_t的结构体大小
-**/
-size_t nbiot_sockaddr_size( const nbiot_sockaddr_t *addr );
 
 /**
  * 比较2个socket地址信息是否一致
