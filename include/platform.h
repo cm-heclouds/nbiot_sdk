@@ -6,9 +6,7 @@
 #ifndef NBIOT_INClUDE_PLATFORM_H_
 #define NBIOT_INClUDE_PLATFORM_H_
 
-#if defined(NBIOT_WIN) ||\
-    defined(NBIOT_POSIX) ||\
-    defined(NBIOT_MSP430)
+#if defined(NBIOT_WIN) || defined(NBIOT_POSIX)
 #include <stddef.h>   /* for size_t */
 #include <stdint.h>   /* for integer types */
 #include <stdbool.h>  /* for bool */

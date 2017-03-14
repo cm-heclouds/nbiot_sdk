@@ -97,10 +97,9 @@ struct nbiot_resource_t
 typedef struct nbiot_device_t nbiot_device_t;
 
 /**
- * 创建OneNET接入设备
+ * 创建OneNET接入设备实例
  * @param dev           [OUT] 指向nbiot_device_t指针的内存
- *        port          本地绑定端口
- *        serial_number 设备序列号,在运行过程中必须有效
+ *        port          本地UDP绑定端口
  * @return 成功返回NBIOT_ERR_OK
 **/
 int nbiot_device_create( nbiot_device_t **dev,
@@ -116,7 +115,6 @@ void nbiot_device_destroy( nbiot_device_t *dev );
  * 连接OneNET服务
  * @param dev 指向nbiot_device_t的内存
  *        server_uri 服务链接地址（例如coap://127.0.0.1:5683）
- *                   在运行过程中必须有效
  *        life_time  保活时间（秒）
  * @return 成功返回NBIOT_ERR_OK
 **/
@@ -147,7 +145,14 @@ int nbiot_device_configure( nbiot_device_t   *dev,
                             size_t            res_num );
 
 /**
- * 逻辑循环
+ * 设备与OneNET服务的连接是否就绪
+ * @param dev 指向nbiot_device_t的内存
+ * @return 就绪返回true，否则返回false
+**/
+bool nbiot_device_ready( nbiot_device_t *dev );
+
+/**
+ * 数据驱动以及设备保活
  * @param dev     指向nbiot_device_t的内存
  *        timeout 执行超时时间（秒）
  * @return 成功返回NBIOT_ERR_OK
@@ -156,11 +161,11 @@ int nbiot_device_step( nbiot_device_t *dev,
                        time_t          timeout );
 
 /**
- * 通知OneNET资源更新
+ * 主动上报资源数据
  * @param dev    指向nbiot_device_t的内存
- *        objid  object id
- *        instid object instance id
- *        resid  resource id
+ *        objid  object id（对象）
+ *        instid object instance id（对象实例）
+ *        resid  resource id（属性）
  * @return 成功返回NBIOT_ERR_OK
 **/
 int nbiot_device_notify( nbiot_device_t *dev,

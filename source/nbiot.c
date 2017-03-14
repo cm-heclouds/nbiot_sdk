@@ -349,6 +349,16 @@ int nbiot_device_configure( nbiot_device_t   *dev,
     return NBIOT_ERR_OK;
 }
 
+bool nbiot_device_ready( nbiot_device_t *dev )
+{
+    if ( NULL == dev )
+    {
+        return false;
+    }
+
+    return (STATE_READY == dev->lwm2m.state);
+}
+
 int nbiot_device_step( nbiot_device_t *dev,
                        time_t          timeout )
 {
