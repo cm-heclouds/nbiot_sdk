@@ -21,6 +21,7 @@ OneNET NBIOT C SDK
 ## 目录结构
 ```
 nbiot_sdk
+   + doc             sdk使用说明以及移植说明文档等
    + include         NBIOT SDK API相关头文件
    + platforms       平台相关的接口（include/platform.h;include/utils.h）实现
        + posix       支持posix的系统的相关接口实现
