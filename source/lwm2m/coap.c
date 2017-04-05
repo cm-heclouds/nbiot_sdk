@@ -641,6 +641,7 @@ coap_status_t coap_parse_message( void    *request,
         case COAP_OPTION_MAX_AGE:
         case COAP_OPTION_LOCATION_QUERY:
         case COAP_OPTION_PROXY_URI:
+        case COAP_OPTION_TOKEN:
             /* nothing */
         break;
 
@@ -655,6 +656,7 @@ coap_status_t coap_parse_message( void    *request,
                 coap_pkt->accept[coap_pkt->accept_num] = coap_parse_int_option( current_option, option_length );
                 coap_pkt->accept_num += 1;
                 PRINTF( "Accept [%u]\n", coap_pkt->content_type );
+                PRINTF( "Accept [%u]\n", coap_pkt->accept[coap_pkt->accept_num-1] );
             }
         break;
 
