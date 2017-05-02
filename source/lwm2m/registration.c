@@ -436,7 +436,7 @@ void registration_step( lwm2m_context_t * contextP,
             case STATE_REGISTERED:
             {
                 time_t nextUpdate;
-                time_t interval;
+                int    interval;
 
                 nextUpdate = targetP->lifetime;
                 if ( COAP_MAX_TRANSMIT_WAIT < nextUpdate )

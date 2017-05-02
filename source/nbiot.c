@@ -372,11 +372,6 @@ int nbiot_device_step( nbiot_device_t *dev,
         return NBIOT_ERR_BADPARAM;
     }
 
-    if ( lwm2m_step(&dev->lwm2m,&timeout) )
-    {
-        return NBIOT_ERR_INTERNAL;
-    }
-
     do
     {
         ret = nbiot_udp_recv( dev->sock,
@@ -416,6 +411,11 @@ int nbiot_device_step( nbiot_device_t *dev,
             break;
         }
     } while(1);
+
+    if ( lwm2m_step(&dev->lwm2m,&timeout) )
+    {
+        return NBIOT_ERR_INTERNAL;
+    }
 
     if ( STATE_RESET == dev->lwm2m.state )
     {
