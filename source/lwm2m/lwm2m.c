@@ -164,22 +164,19 @@ static int prv_refreshServerList( lwm2m_context_t * contextP )
 
 int lwm2m_configure( lwm2m_context_t *contextP,
                      const char      *endpointName,
-                     const char      *authCode,
                      lwm2m_object_t  *objectList )
 {
     lwm2m_userdata_t *userData;
 
-    LOG_ARG( "endpointName: \"%s\", authCode: \"%s\", msisdn: \"null\", altPath: \"null\"", endpointName, authCode );
+    LOG_ARG( "endpointName: \"%s\", msisdn: \"null\", altPath: \"null\"", endpointName );
     /* This API can be called only once for now */
     if ( contextP->endpointName != NULL ||
-         contextP->authCode != NULL ||
          contextP->objectList != NULL )
     {
         return COAP_400_BAD_REQUEST;
     }
 
     if ( endpointName == NULL ||
-         authCode == NULL ||
          objectList == NULL ||
          contextP->userData == NULL )
     {
@@ -194,7 +191,6 @@ int lwm2m_configure( lwm2m_context_t *contextP,
     }
 
     contextP->endpointName = endpointName;
-    contextP->authCode = authCode;
     contextP->objectList = objectList;
 
     return COAP_NO_ERROR;

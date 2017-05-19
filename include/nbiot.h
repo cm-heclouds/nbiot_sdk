@@ -132,7 +132,7 @@ int nbiot_device_close( nbiot_device_t *dev );
 /**
  * 配置设备
  * @param dev 指向nbiot_device_t的内存
- *        endpoint_name device名称（与设备注册信息一致）
+ *        endpoint_name device名称("imei;imsi")
  *        auth_code     device鉴权码（OneNET自动生成）
  *        res_array     resources指针数组
  *        res_num       resources总数
@@ -140,7 +140,6 @@ int nbiot_device_close( nbiot_device_t *dev );
 **/
 int nbiot_device_configure( nbiot_device_t   *dev,
                             const char       *endpoint_name,
-                            const char       *auth_code,
                             nbiot_resource_t *res_array[],
                             size_t            res_num );
 

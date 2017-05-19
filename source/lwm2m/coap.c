@@ -448,10 +448,6 @@ size_t coap_serialize_get_size( void *packet )
         /* can be stored in extended fields */
         length += COAP_MAX_OPTION_HEADER_LEN;
     }
-    if ( IS_OPTION( coap_pkt, COAP_OPTION_AUTH_CODE ) )
-    {
-        length += COAP_MAX_OPTION_HEADER_LEN + coap_pkt->auth_code_len;
-    }
 
     return length;
 }
@@ -501,7 +497,6 @@ size_t coap_serialize_message( void    *packet,
   COAP_SERIALIZE_MULTI_OPTION(  COAP_OPTION_URI_QUERY,     uri_query,     "Uri-Query" );
   COAP_SERIALIZE_BLOCK_OPTION(  COAP_OPTION_BLOCK2,        block2,        "Block2" );
   COAP_SERIALIZE_BLOCK_OPTION(  COAP_OPTION_BLOCK1,        block1,        "Block1" );
-  COAP_SERIALIZE_STRING_OPTION( COAP_OPTION_AUTH_CODE,     auth_code,     '\0', "Auth-Code" );
 
   PRINTF("-Done serializing at %p----\n", option);
   /* Free allocated header fields */
@@ -679,12 +674,6 @@ coap_status_t coap_parse_message( void    *request,
             coap_add_multi_option( &(coap_pkt->location_path), current_option, option_length, 1 );
         break;
 
-        case COAP_OPTION_AUTH_CODE:
-            coap_pkt->auth_code = current_option;
-            coap_pkt->auth_code_len = option_length;
-            PRINTF( "Auth-Code [%.*s]\n", coap_pkt->auth_code, coap_pkt->auth_code_len );
-        break;
-
         case COAP_OPTION_OBSERVE:
             coap_pkt->observe = coap_parse_int_option( current_option, option_length );
             PRINTF( "Observe [%lu]\n", coap_pkt->observe );
@@ -784,18 +773,6 @@ int coap_set_header_token( void          *packet,
 
     SET_OPTION( coap_pkt, COAP_OPTION_TOKEN );
     return coap_pkt->token_len;
-}
-
-int coap_set_header_auth_code( void       *packet,
-                               const char *code )
-{
-    coap_packet_t *const coap_pkt = (coap_packet_t *)packet;
-
-    coap_pkt->auth_code = (uint8_t *)code;
-    coap_pkt->auth_code_len = nbiot_strlen( code );
-
-    SET_OPTION( coap_pkt, COAP_OPTION_AUTH_CODE );
-    return coap_pkt->auth_code_len;
 }
 
 int coap_set_header_uri_path( void       *packet,

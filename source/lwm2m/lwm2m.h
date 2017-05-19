@@ -495,7 +495,6 @@ typedef struct
 {
     lwm2m_client_state_t       state;
     const char                *endpointName;
-    const char                *authCode;
     lwm2m_server_t            *bootstrapServerList;
     lwm2m_server_t            *serverList;
     lwm2m_object_t            *objectList;
@@ -560,7 +559,6 @@ void lwm2m_handle_packet( lwm2m_context_t *contextP,
 */
 int lwm2m_configure( lwm2m_context_t *contextP,
                      const char      *endpointName,
-                     const char      *authCode,
                      lwm2m_object_t  *objectList );
 
 /*
