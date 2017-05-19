@@ -129,7 +129,6 @@ typedef enum
     COAP_OPTION_TOKEN          = 19, /* 1-8 B */
     COAP_OPTION_BLOCK2         = 23, /* 1-3 B */
     COAP_OPTION_BLOCK1         = 27, /* 1-3 B */
-    COAP_OPTION_SIZE           = 28, /* 0-4 B */
     COAP_OPTION_AUTH_CODE      = 63  /* 1-270 B OneNET defined option, use for authentication */
 } coap_option_t;
 
@@ -180,7 +179,7 @@ typedef struct
 
     uint8_t             options[COAP_OPTION_AUTH_CODE / OPTION_MAP_SIZE + 1]; /* Bitmap to check if option is set */
 
-    coap_content_type_t content_type; /* Parse options once and store; allows setting options in random order  */
+    int					content_type; /* Parse options once and store; allows setting options in random order  */
     size_t              auth_code_len;
     const uint8_t      *auth_code;
     multi_option_t     *location_path;
@@ -198,7 +197,6 @@ typedef struct
     uint8_t             block1_more;
     uint16_t            block1_size;
     uint32_t            block1_offset;
-    uint32_t            size;
     multi_option_t     *uri_query;
     uint16_t            payload_len;
     uint8_t            *payload;
@@ -285,6 +283,8 @@ int coap_set_header_block1( void    *packet,
 int coap_set_payload( void       *packet,
                       const void *payload,
                       size_t      length );
+
+uint16_t coap_log_2( uint16_t value );
 
 #ifdef __cplusplus
 } /* extern "C" { */

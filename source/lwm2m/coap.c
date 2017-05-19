@@ -116,13 +116,14 @@ typedef enum
     COAP_OPTION_URI_PORT       = 7,  /* 0-2 B */
     COAP_OPTION_MAX_AGE        = 14, /* 0-4 B */
     COAP_OPTION_LOCATION_QUERY = 20, /* 1-270 B */
+    COAP_OPTION_SIZE           = 28, /* 0-4 B */
     COAP_OPTION_PROXY_URI      = 35  /* 1-270 B */
 } coap_option_ignore_t;
 
 const char *coap_error_message = "";
 coap_status_t coap_error_code = NO_ERROR;
 
-static uint16_t coap_log_2( uint16_t value )
+uint16_t coap_log_2( uint16_t value )
 {
     uint16_t result = 0;
     do
@@ -500,7 +501,6 @@ size_t coap_serialize_message( void    *packet,
   COAP_SERIALIZE_MULTI_OPTION(  COAP_OPTION_URI_QUERY,     uri_query,     "Uri-Query" );
   COAP_SERIALIZE_BLOCK_OPTION(  COAP_OPTION_BLOCK2,        block2,        "Block2" );
   COAP_SERIALIZE_BLOCK_OPTION(  COAP_OPTION_BLOCK1,        block1,        "Block1" );
-  COAP_SERIALIZE_INT_OPTION(    COAP_OPTION_SIZE,          size,          "Size" );
   COAP_SERIALIZE_STRING_OPTION( COAP_OPTION_AUTH_CODE,     auth_code,     '\0', "Auth-Code" );
 
   PRINTF("-Done serializing at %p----\n", option);
@@ -641,6 +641,7 @@ coap_status_t coap_parse_message( void    *request,
         case COAP_OPTION_MAX_AGE:
         case COAP_OPTION_LOCATION_QUERY:
         case COAP_OPTION_PROXY_URI:
+        case COAP_OPTION_SIZE:
         case COAP_OPTION_TOKEN:
             /* nothing */
         break;
@@ -705,11 +706,6 @@ coap_status_t coap_parse_message( void    *request,
             coap_pkt->block1_offset = (coap_pkt->block1_num & ~0x0000000F) << (coap_pkt->block1_num & 0x07);
             coap_pkt->block1_num >>= 4;
             PRINTF( "Block1 [%lu%s (%u B/blk)]\n", coap_pkt->block1_num, coap_pkt->block1_more ? "+" : "", coap_pkt->block1_size );
-        break;
-
-        case COAP_OPTION_SIZE:
-            coap_pkt->size = coap_parse_int_option( current_option, option_length );
-            PRINTF( "Size [%lu]\n", coap_pkt->size );
         break;
 
         default:

@@ -290,7 +290,6 @@ int nbiot_device_configure( nbiot_device_t   *dev,
 
     if ( NULL == dev ||
          NULL == endpoint_name ||
-         NULL == auth_code ||
          NULL == res_array )
     {
         return NBIOT_ERR_BADPARAM;
