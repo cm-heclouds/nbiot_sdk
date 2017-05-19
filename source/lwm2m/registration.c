@@ -127,10 +127,7 @@ static uint8_t prv_register( lwm2m_context_t * contextP,
     coap_set_header_uri_path( transaction->message, "/"URI_REGISTRATION_SEGMENT );
     coap_set_header_uri_query( transaction->message, query );
     coap_set_header_content_type( transaction->message, LWM2M_CONTENT_LINK );
-    if ( contextP->authCode )
-    {
-        coap_set_header_auth_code( transaction->message, contextP->authCode );
-    }
+    coap_set_header_auth_code( transaction->message, contextP->authCode );
     coap_set_payload( transaction->message, payload, payload_length );
 
     transaction->callback = prv_handleRegistrationReply;
@@ -191,10 +188,7 @@ static int prv_updateRegistration( lwm2m_context_t * contextP,
     if ( transaction == NULL ) return COAP_500_INTERNAL_SERVER_ERROR;
 
     coap_set_header_uri_path( transaction->message, server->location );
-    if ( contextP->authCode )
-    {
-        coap_set_header_auth_code( transaction->message, contextP->authCode );
-    }
+    coap_set_header_auth_code( transaction->message, contextP->authCode );
     /* endpoint name */
     {
         query_length = utils_stringCopy( query, PRV_QUERY_BUFFER_LENGTH, "?ep=" );
@@ -411,10 +405,7 @@ void registration_deregister( lwm2m_context_t * contextP,
     }
 
     coap_set_header_uri_path( transaction->message, serverP->location );
-    if ( contextP->authCode )
-    {
-        coap_set_header_auth_code( transaction->message, contextP->authCode );
-    }
+    coap_set_header_auth_code( transaction->message, contextP->authCode );
     coap_set_header_uri_query( transaction->message, query );
 
     transaction->callback = prv_handleDeregistrationReply;

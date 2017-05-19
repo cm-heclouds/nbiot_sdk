@@ -279,14 +279,14 @@ int nbiot_device_close( nbiot_device_t *dev )
 }
 
 int nbiot_device_configure( nbiot_device_t   *dev,
-                            const char       *endpoint_name,
-                            const char       *auth_code,
+                            char             *endpoint_name,
                             nbiot_resource_t *res_array[],
                             size_t            res_array_num )
 {
     int i;
     int ret;
     lwm2m_object_t *obj;
+    char *auth_code = NULL;
 
     if ( NULL == dev ||
          NULL == endpoint_name ||
@@ -294,6 +294,13 @@ int nbiot_device_configure( nbiot_device_t   *dev,
     {
         return NBIOT_ERR_BADPARAM;
     }
+
+    auth_code = nbiot_strrchr( endpoint_name, ';' );
+    if ( !auth_code )
+    {
+        return NBIOT_ERR_BADPARAM;
+    }
+    *auth_code++ = '\0';
 
     for ( i = 0; i < (int)res_array_num; ++i )
     {

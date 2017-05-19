@@ -169,15 +169,17 @@ int lwm2m_configure( lwm2m_context_t *contextP,
 {
     lwm2m_userdata_t *userData;
 
-    LOG_ARG( "endpointName: \"%s\", authCode: \"%s\", msisdn: \"null\", altPath: \"null\"", endpointName, authCode ? authCode : "" );
+    LOG_ARG( "endpointName: \"%s\", authCode: \"%s\", msisdn: \"null\", altPath: \"null\"", endpointName, authCode );
     /* This API can be called only once for now */
     if ( contextP->endpointName != NULL ||
+         contextP->authCode != NULL ||
          contextP->objectList != NULL )
     {
         return COAP_400_BAD_REQUEST;
     }
 
     if ( endpointName == NULL ||
+         authCode == NULL ||
          objectList == NULL ||
          contextP->userData == NULL )
     {

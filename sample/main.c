@@ -17,8 +17,7 @@ void usage( const char *name )
     nbiot_printf( "-i URI\t\tSet the coap uri of the server to connect to. For example: coap://localhost:5683\r\n" );
     nbiot_printf( "-p PORT\t\tSet the port of the client to bind to. Default: 56830\r\n" );
     nbiot_printf( "-t TIME\t\tSet the lifetime of the client. Default: 300\r\n" );
-    nbiot_printf( "-n NAME\t\tSet the endpoint name of the client.\r\n" );
-    nbiot_printf( "-a AUTHCODE\tSet the authentication code of the client.\r\n" );
+    nbiot_printf( "-n NAME\t\tSet the endpoint name[imei;imsi] of the client.\r\n" );
     nbiot_printf( "\r\n" );
 }
 
@@ -80,8 +79,7 @@ int main( int argc, char *argv[] )
     int life_time = 300;
     uint16_t port = 56830;
     const char *uri = NULL;
-    const char *auth_code = NULL;
-    const char *endpoint_name = NULL;
+    char *endpoint_name = NULL;
 
     int opt = 1;
     while ( opt < argc )
@@ -148,19 +146,6 @@ int main( int argc, char *argv[] )
             }
             break;
 
-            case 'a':
-            {
-                ++opt;
-                if ( opt >= argc )
-                {
-                    usage( argv[0] );
-                    return 0;
-                }
-
-                auth_code = argv[opt];
-            }
-            break;
-
             default:
             {
                 usage( argv[0] );
@@ -173,7 +158,6 @@ int main( int argc, char *argv[] )
     }
 
     if ( NULL == uri ||
-         NULL == auth_code ||
          NULL == endpoint_name )
     {
         usage( argv[0] );
@@ -272,7 +256,6 @@ int main( int argc, char *argv[] )
 
         ret = nbiot_device_configure( dev,
                                       endpoint_name,
-                                      auth_code,
                                       res,
                                       sizeof(res) / sizeof(res[0]) );
         if ( ret )
