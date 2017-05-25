@@ -368,6 +368,65 @@ static uint8_t prv_resource_execute( uint16_t        instid,
     return COAP_204_CHANGED;
 }
 
+static uint8_t prv_resource_discover( uint16_t        instid,
+                                      int            *num,
+                                      lwm2m_data_t  **data,
+                                      lwm2m_object_t *obj )
+{
+    int i;
+    resource_t *res;
+    instance_t *inst;
+
+    inst = (instance_t*)LWM2M_LIST_FIND( obj->instanceList, instid );
+    if ( NULL == inst )
+    {
+        return COAP_404_NOT_FOUND;
+    }
+
+    /* is the server asking for the full instance ? */
+    if ( 0 == *num )
+    {
+        i = 0;
+        res = inst->reslist;
+        while ( NULL != res )
+        {
+            if ( res->data->flag & NBIOT_RESOURCE_READABLE )
+            {
+                ++i;
+            }
+            res = res->next;
+        }
+
+        if ( i > 0 )
+        {
+            *data = lwm2m_data_new( i );
+            if ( NULL == *data )
+            {
+                return COAP_500_INTERNAL_SERVER_ERROR;
+            }
+            *num = i;
+
+            i = 0;
+            res = inst->reslist;
+            while ( NULL != res )
+            {
+                if ( res->data->flag & NBIOT_RESOURCE_READABLE )
+                {
+                    (*data)[i++].id = res->resid;
+                }
+                res = res->next;
+            }
+        }
+        else
+        {
+            *data = NULL;
+            *num = 0;
+        }
+    }
+
+    return COAP_205_CONTENT;
+}
+
 int create_resource_object( lwm2m_object_t   *obj,
                             nbiot_resource_t *data )
 {
@@ -422,6 +481,7 @@ int create_resource_object( lwm2m_object_t   *obj,
         obj->readFunc     = prv_resource_read;
         obj->writeFunc    = prv_resource_write;
         obj->executeFunc  = prv_resource_execute;
+        obj->discoverFunc = prv_resource_discover;
     }
 
     return NBIOT_ERR_OK;

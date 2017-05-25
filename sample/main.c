@@ -167,7 +167,7 @@ int main( int argc, char *argv[] )
     nbiot_init_environment();
     do
     {
-        int i;
+        int i = 0;
         int ret;
         char tmp[16];
         nbiot_device_t *dev = NULL;
@@ -179,11 +179,11 @@ int main( int argc, char *argv[] )
         nbiot_resource_t aicv; /* ipso analog input - analog input current value */
         nbiot_resource_t *res[5];
 
-        res[0] = &dis;
-        res[1] = &dic;
-        res[2] = &dicr;
-        res[3] = &at;
-        res[4] = &aicv;
+        res[i++] = &dis;
+        res[i++] = &dic;
+        res[i++] = &dicr;
+        res[i++] = &at;
+        res[i++] = &aicv;
 
         /* ipso digital input - digital input state */
         dis.objid         = 3200;
@@ -314,7 +314,7 @@ int main( int argc, char *argv[] )
                                      dic.objid,
                                      dic.instid,
                                      dic.resid );
-
+                
                 /* ipso digital input - digital input counter reset */
                 nbiot_free( dicr.value.as_bin.bin );
                 dicr.value.as_bin.bin = (uint8_t*)nbiot_strdup( nbiot_itoa( tmp, rand() ) );
@@ -323,7 +323,7 @@ int main( int argc, char *argv[] )
                                      dicr.objid,
                                      dicr.instid,
                                      dicr.resid );
-
+                
                 /* ipso digital input - application type */
                 nbiot_free( at.value.as_str.str );
                 at.value.as_str.str = nbiot_strdup( nbiot_itoa( tmp, rand() ) );
