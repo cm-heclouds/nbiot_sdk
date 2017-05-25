@@ -7,23 +7,23 @@ OneNET NBIOT C SDK
 
 ## Support&Not Support
 ### Support
-1.register
-2.update
-3.de-register
-4.observe
-5.cancel observe
-6.discover
-7.read
-8.partial update write
-9.execute
-10.notify
+1. register
+2. update
+3. de-register
+4. observe
+5. cancel observe
+6. discover
+7. read
+8. partial update write
+9. execute
+10. notify
 ### Not Support
-1.bootstrap
-2.replace write
-3.create
-4.delete
-5.write attribute
-6.coap block
+1. bootstrap
+2. replace write
+3. create
+4. delete
+5. write attribute
+6. coap block
  
 ## 编译SDK
 ### 通过CMAKE编译SDK
