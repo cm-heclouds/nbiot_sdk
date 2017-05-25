@@ -33,5 +33,5 @@ nbiot_sdk
 1. NBIOT SDK对设备内存的最低需求是多少？
 ```
    随着数据流个数的增加，内存需求也会相应地增加
-   例如：sample中对内存的需求分别是：（stack 1kb heap 512kb）
+   例如：sample中对内存的需求分别是：（stack 1kb heap 512b）
 ```
