@@ -227,7 +227,7 @@ int main( int argc, char *argv[] )
         }
 
         at.type = NBIOT_BINARY;
-        at.flag = NBIOT_READABLE | NBIOT_WRITABLE | NBIOT_EXECUTABLE;
+        at.flag = NBIOT_READABLE | NBIOT_WRITABLE;
         at.value.as_buf.len = nbiot_itoa( nbiot_rand(), tmp, 16 );
         at.value.as_buf.val = nbiot_strdup( tmp, dicr.value.as_buf.len );
         ret = nbiot_resource_add( dev,

@@ -187,7 +187,7 @@ typedef enum
     STATE_REG_UPDATE_PENDING, /* registration update pending */
     STATE_REG_UPDATE_NEEDED,  /* registration update required */
     STATE_DEREG_PENDING,      /* deregistration pending */
-    STATE_SVR_RESET           /* server reset */
+    STATE_SERVER_RESET           /* server reset */
 } nbiot_status_t;
 
 #define STATE_ERROR(x) \
@@ -196,7 +196,7 @@ typedef enum
         ((x)->state == STATE_REG_UPDATE_PENDING ? NBIOT_ERR_OK : \
         ((x)->state == STATE_REG_UPDATE_NEEDED ? NBIOT_ERR_OK : \
         ((x)->state == STATE_REG_FAILED ? NBIOT_ERR_REG_FAILED : \
-        ((x)->state == STATE_SVR_RESET ? NBIOT_ERR_SERVER_RESET : NBIOT_ERR_INTERNAL))))))
+        ((x)->state == STATE_SERVER_RESET ? NBIOT_ERR_SERVER_RESET : NBIOT_ERR_INTERNAL))))))
 
 typedef struct _nbiot_node_t
 {
@@ -275,6 +275,11 @@ int nbiot_node_write( nbiot_node_t          *node,
                       const uint8_t         *buffer,
                       size_t                 buffer_len,
                       nbiot_write_callback_t write_func );
+int nbiot_node_discover( nbiot_node_t      *node,
+                         const nbiot_uri_t *uri,
+                         uint8_t           *buffer,
+                         size_t             buffer_len,
+                         bool               first );
 nbiot_node_t* nbiot_node_find( nbiot_device_t    *dev,
                                const nbiot_uri_t *uri );
 

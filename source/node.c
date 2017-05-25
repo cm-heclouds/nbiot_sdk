@@ -342,6 +342,88 @@ int nbiot_node_write( nbiot_node_t          *node,
     return COAP_BAD_REQUEST_400;
 }
 
+int nbiot_node_discover( nbiot_node_t      *node,
+                         const nbiot_uri_t *uri,
+                         uint8_t           *buffer,
+                         size_t             buffer_len,
+                         bool               first )
+{
+    if ( uri->flag & NBIOT_SET_RESID )
+    {
+        int i;
+        int ret;
+        size_t offset = 0;
+        uint16_t id[3] = { uri->objid, uri->instid, uri->resid };
+
+        if ( !first && buffer_len )
+        {
+            buffer[offset++] = ',';
+        }
+
+        if ( offset + 2 > buffer_len )
+        {
+            return 0;
+        }
+
+        /* </object id/instance id/resource id */
+        buffer[offset++] = '<';
+        for ( i = 0; i < 3; ++i )
+        {
+            buffer[offset++] = '/';
+            ret = nbiot_add_integer( id[i],
+                                     (char*)buffer + offset,
+                                     buffer_len - offset );
+            if ( !ret &&
+                 offset + ret + 1 >buffer_len )
+            {
+                return 0;
+            }
+            else
+            {
+                offset += ret;
+            }
+        }
+        buffer[offset++] = '>';
+
+        return offset;
+    }
+    else if ( uri->flag & NBIOT_SET_OBJID )
+    {
+        int len = 0;
+        uint16_t *id;
+        nbiot_uri_t tmp[1];
+        nbiot_node_t *parent = node;
+
+        *tmp = *uri;
+        if ( tmp->flag & NBIOT_SET_INSTID )
+        {
+            id = &tmp->resid;
+            tmp->flag |= NBIOT_SET_RESID;
+        }
+        else
+        {
+            id = &tmp->instid;
+            tmp->flag |= NBIOT_SET_INSTID;
+        }
+
+        for ( node = (nbiot_node_t*)node->data;
+              node != NULL;
+              node = node->next )
+        {
+            *id = node->id;
+            len += nbiot_node_discover( node,
+                                        tmp,
+                                        buffer + len,
+                                        buffer_len - len,
+                                        first ? node == parent->data : first );
+        }
+
+        return len;
+    }
+
+    return 0;
+}
+
 nbiot_node_t* nbiot_node_find( nbiot_device_t    *dev,
                                const nbiot_uri_t *uri )
 {

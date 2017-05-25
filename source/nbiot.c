@@ -159,6 +159,12 @@ static void handle_read( nbiot_device_t    *dev,
             break;
         }
 
+        if ( coap->offset > coap->size )
+        {
+            coap_set_code( coap, COAP_INTERNAL_SERVER_ERROR_500 );
+            break;
+        }
+
         /* payload */
         coap->buffer[coap->offset++] = 0xff;
         ret = nbiot_node_read( node,
@@ -176,38 +182,6 @@ static void handle_read( nbiot_device_t    *dev,
             coap_set_code( coap, COAP_BAD_REQUEST_400 );
         }
     } while (0);
-}
-
-static bool check_writable( nbiot_node_t *node, uint8_t flag )
-{
-    if ( flag & NBIOT_SET_RESID )
-    {
-        return ((nbiot_value_t*)node->data)->flag & NBIOT_WRITABLE;
-    }
-
-    if ( flag & NBIOT_SET_OBJID )
-    {
-        if ( flag & NBIOT_SET_INSTID )
-        {
-            flag |= NBIOT_SET_RESID;
-        }
-        else
-        {
-            flag |= NBIOT_SET_INSTID;
-        }
-
-        for ( node = (nbiot_node_t*)node->data;
-              node != NULL;
-              node = node->next )
-        {
-            if ( !check_writable(node,flag) )
-            {
-                return false;
-            }
-        }
-    }
-
-    return false;
 }
 
 static void handle_write( nbiot_device_t        *dev,
@@ -287,13 +261,93 @@ static void handle_execute( nbiot_device_t          *dev,
 
 static void handle_discover( nbiot_device_t          *dev,
                              const nbiot_uri_t       *uri,
-                             coap_t                  *coap,
-                             const uint8_t           *buffer,
-                             size_t                   buffer_len )
+                             coap_t                  *coap )
 {
-    
+    do
+    {
+        int ret;
+        nbiot_node_t *node;
+
+        node = nbiot_node_find( dev, uri );
+        if ( !node )
+        {
+            coap_set_code( coap, COAP_NOT_FOUND_404 );
+            break;
+        }
+
+        if ( coap_add_content_type(coap,LWM2M_CONTENT_LINK) )
+        {
+            coap_set_code( coap, COAP_INTERNAL_SERVER_ERROR_500 );
+            break;
+        }
+
+        if ( coap->offset > coap->size )
+        {
+            coap_set_code( coap, COAP_INTERNAL_SERVER_ERROR_500 );
+            break;
+        }
+
+        /* payload */
+        coap->buffer[coap->offset++] = 0xff;
+        ret = nbiot_node_discover( node,
+                                   uri,
+                                   coap->buffer + coap->offset,
+                                   coap->size - coap->offset,
+                                   true );
+        if ( ret )
+        {
+            coap->offset += ret;
+        }
+        else
+        {
+            coap->offset--;
+        }
+    } while (0);
 }
 
+static void handle_observe( nbiot_device_t    *dev,
+                            const nbiot_uri_t *uri,
+                            coap_t            *coap,
+                            const uint8_t     *token,
+                            uint8_t            token_len )
+{
+    do
+    {
+        nbiot_node_t *node;
+        nbiot_observe_t *tmp;
+
+        node = nbiot_node_find( dev, uri );
+        if ( !node )
+        {
+            coap_set_code( coap, COAP_NOT_FOUND_404 );
+            break;
+        }
+
+        tmp = nbiot_observe_add( dev,
+                                 uri,
+                                 token,
+                                 token_len );
+        if ( !tmp )
+        {
+            coap_set_code( coap, COAP_BAD_REQUEST_400 );
+            break;
+        }
+
+        if ( coap_add_observe(coap,tmp->counter++) )
+        {
+            coap_set_code( coap, COAP_INTERNAL_SERVER_ERROR_500 );
+            break;
+        }
+
+        if ( coap_add_content_type(coap,LWM2M_CONTENT_TLV) )
+        {
+            coap_set_code( coap, COAP_INTERNAL_SERVER_ERROR_500 );
+            break;
+        }
+
+        handle_read( dev, uri, coap );
+    } while (0);
+}
 static void nbiot_handle_request( nbiot_device_t    *dev,
                                   uint16_t           code,
                                   uint8_t           *buffer,
@@ -301,13 +355,13 @@ static void nbiot_handle_request( nbiot_device_t    *dev,
                                   size_t             max_buffer_len )
 {
     int ret;
+    coap_t coap[1];
     uint16_t offset;
     uint8_t token[8];
     nbiot_uri_t uri[1];
-    coap_t coap[1];
     char *payload = NULL;
-    uint16_t payload_len = 0;
     char *uri_query = NULL;
+    uint16_t payload_len = 0;
     uint16_t uri_query_len = 0;
     uint32_t accept = UINT32_MAX;
     uint32_t observe = UINT32_MAX;
@@ -364,34 +418,14 @@ static void nbiot_handle_request( nbiot_device_t    *dev,
         {
             if ( observe == 0 )
             {
-                nbiot_node_t *node;
-                nbiot_observe_t *tmp;
-
-                node = nbiot_node_find( dev, uri );
-                if ( !node )
-                {
-                    coap_set_code( coap, COAP_NOT_FOUND_404 );
-                    break;
-                }
-
-                tmp = nbiot_observe_add( dev,
-                                         uri,
-                                         token,
-                                         token_len );
-                if ( !tmp )
-                {
-                    coap_set_code( coap, COAP_BAD_REQUEST_400 );
-                    break;
-                }
-
-                coap_add_observe( coap, tmp->counter++ );
-                coap_add_content_type( coap, LWM2M_CONTENT_TLV );
-                handle_read( dev, uri, coap );
+                /* observe */
+                handle_observe( dev, uri, coap, token, token_len );
                 break;
             }
 
             if ( observe == 1 )
             {
+                /* cancel observe */
                 ret = nbiot_observe_del( dev, uri );
                 if ( ret )
                 {
@@ -403,14 +437,21 @@ static void nbiot_handle_request( nbiot_device_t    *dev,
             if ( accept == LWM2M_CONTENT_LINK )
             {
                 /* discover */
-                coap_set_code( coap, COAP_METHOD_NOT_ALLOWED_405 );
+                handle_discover( dev, uri, coap );
                 break;
             }
 
             /* read */
-            coap_add_content_type( coap, LWM2M_CONTENT_TLV );
-            handle_read( dev, uri, coap );
-            break;
+            if ( coap_add_content_type(coap,LWM2M_CONTENT_TLV) )
+            {
+                coap_set_code( coap, COAP_INTERNAL_SERVER_ERROR_500 );
+                break;
+            }
+            else
+            {
+                handle_read( dev, uri, coap );
+                break;
+            }
         }
 
         if ( COAP_POST == code )
@@ -566,7 +607,7 @@ static void nbiot_handle_transaction( nbiot_device_t *dev,
     if ( COAP_TYPE_RST == type )
     {
         /* reset */
-        dev->state = STATE_SVR_RESET;
+        dev->state = STATE_SERVER_RESET;
     }
 }
 
@@ -733,7 +774,8 @@ void nbiot_device_close( nbiot_device_t *dev,
 
             /* ok */
             if ( dev->state == STATE_REG_FAILED ||
-                 dev->state == STATE_DEREGISTERED )
+                 dev->state == STATE_DEREGISTERED ||
+                 dev->state == STATE_SERVER_RESET )
             {
                 break;
             }
