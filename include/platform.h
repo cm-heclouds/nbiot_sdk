@@ -3,8 +3,8 @@
  * All rights reserved.
 **/
 
-#ifndef NBIOT_INClUDE_PLATFORM_H_
-#define NBIOT_INClUDE_PLATFORM_H_
+#ifndef ONENET_PLATFORM_H_
+#define ONENET_PLATFORM_H_
 
 #if defined(NBIOT_WIN) || defined(NBIOT_POSIX)
 #include <stddef.h>   /* for size_t */
@@ -24,7 +24,7 @@ extern "C" {
 /**
  * 初始化环境
 **/
-void nbiot_init_environment( void );
+void nbiot_init_environment( int argc, char *argv[] );
 
 /**
  * 清理环境
@@ -49,18 +49,6 @@ void nbiot_free( void *ptr );
  * @return 返回当前距(00:00:00 UTC, January 1, 1970)的秒数
 **/
 time_t nbiot_time( void );
-
-#ifdef HAVE_DTLS
-#ifndef CLOCK_PER_SECOND
-#define CLOCK_PER_SECOND 1000
-#endif
-
-/**
- * 获取当前时刻
- * @return 返回当前时刻(毫秒)
-**/
-clock_t nbiot_tick( void );
-#endif
 
 /**
  * 休眠
@@ -160,4 +148,4 @@ void nbiot_sockaddr_destroy( nbiot_sockaddr_t *addr );
 } /* extern "C" { */
 #endif
 
-#endif /* NBIOT_INClUDE_PLATFORM_H_ */
+#endif /* ONENET_PLATFORM_H_ */

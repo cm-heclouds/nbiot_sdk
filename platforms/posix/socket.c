@@ -13,49 +13,8 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/ioctl.h>
-
-#ifdef NBIOT_DEBUG
-#include <stdio.h>
-void output_buffer( uint8_t *buffer, int length )
-{
-    int i;
-
-    if ( length == 0 ) nbiot_printf( "\n" );
-
-    i = 0;
-    while ( i < length )
-    {
-        uint8_t array[16];
-        int j;
-
-        nbiot_memmove( array, buffer + i, 16 );
-        for ( j = 0; j < 16 && i + j < length; j++ )
-        {
-            nbiot_printf( "%02X ", array[j] );
-            if ( j % 4 == 3 ) nbiot_printf( " " );
-        }
-        if ( length > 16 )
-        {
-            while ( j < 16 )
-            {
-                nbiot_printf( "   " );
-                if ( j % 4 == 3 ) nbiot_printf( " " );
-                j++;
-            }
-        }
-        nbiot_printf( " " );
-        for ( j = 0; j < 16 && i + j < length; j++ )
-        {
-            if ( isprint( array[j] ) )
-                nbiot_printf( "%c", array[j] );
-            else
-                nbiot_printf( "." );
-        }
-        nbiot_printf( "\n" );
-        i += 16;
-    }
-}
-#endif
+#include <arpa/inet.h>
+//#include <netinet/in.h>
 
 #define INVALID_SOCKET (-1)
 
@@ -71,13 +30,13 @@ struct nbiot_sockaddr_t
 
 int nbiot_udp_create( nbiot_socket_t **sock )
 {
-    if ( NULL == sock )
+    if ( !sock )
     {
         return NBIOT_ERR_BADPARAM;
     }
 
     *sock = (nbiot_socket_t*)nbiot_malloc( sizeof(nbiot_socket_t) );
-    if ( NULL == *sock )
+    if ( !(*sock) )
     {
         return NBIOT_ERR_NO_MEMORY;
     }
@@ -88,7 +47,7 @@ int nbiot_udp_create( nbiot_socket_t **sock )
 
 int nbiot_udp_close( nbiot_socket_t *sock )
 {
-    if ( NULL == sock )
+    if ( !sock )
     {
         return NBIOT_ERR_BADPARAM;
     }
@@ -112,12 +71,12 @@ int nbiot_udp_bind( nbiot_socket_t *sock,
     struct addrinfo *res;
     struct addrinfo hints;
 
-    if ( NULL == sock )
+    if ( !sock )
     {
         return NBIOT_ERR_BADPARAM;
     }
 
-    nbiot_itoa( temp, port );
+    nbiot_itoa( port, temp, 16 );
     nbiot_memzero( &hints, sizeof(hints) );
     hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_DGRAM;
@@ -129,13 +88,13 @@ int nbiot_udp_bind( nbiot_socket_t *sock,
         return NBIOT_ERR_INTERNAL;
     }
 
-    if ( NULL == res )
+    if ( !res )
     {
         return NBIOT_ERR_INTERNAL;
     }
 
     for ( p = res;
-          NULL != p && INVALID_SOCKET == sock->sock;
+          p && INVALID_SOCKET == sock->sock;
           p = p->ai_next )
     {
         sock->sock = socket( p->ai_family,
@@ -180,13 +139,12 @@ int nbiot_udp_connect( nbiot_socket_t    *sock,
     struct addrinfo *res;
     struct addrinfo hints;
 
-    if ( NULL == sock ||
-         NULL == dest )
+    if ( !sock || !dest )
     {
         return NBIOT_ERR_BADPARAM;
     }
 
-    nbiot_itoa( temp, port );
+    nbiot_itoa( port, temp, 16 );
     nbiot_memzero( &hints, sizeof(hints) );
     hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_DGRAM;
@@ -197,14 +155,14 @@ int nbiot_udp_connect( nbiot_socket_t    *sock,
         return NBIOT_ERR_INTERNAL;
     }
 
-    if ( NULL == res )
+    if ( !res )
     {
         return NBIOT_ERR_INTERNAL;
     }
 
     s = INVALID_SOCKET;
     for ( p = res;
-          NULL != p && INVALID_SOCKET == s;
+          p && INVALID_SOCKET == s;
           p = p->ai_next )
     {
         s = socket( p->ai_family,
@@ -220,7 +178,7 @@ int nbiot_udp_connect( nbiot_socket_t    *sock,
             else
             {
                 close( s );
-                if ( NULL == *dest )
+                if ( !(*dest) )
                 {
                     *dest = (nbiot_sockaddr_t*)nbiot_malloc( sizeof(nbiot_sockaddr_t) );
                     if ( NULL == *dest )
@@ -251,10 +209,7 @@ int nbiot_udp_send( nbiot_socket_t         *sock,
 {
     int ret;
 
-    if ( NULL == sock ||
-         NULL == buff ||
-         NULL == sent ||
-         NULL == dest )
+    if ( !sock || !buff || !sent || !dest )
     {
         return NBIOT_ERR_BADPARAM;
     }
@@ -278,8 +233,11 @@ int nbiot_udp_send( nbiot_socket_t         *sock,
     {
         *sent = ret;
 #ifdef NBIOT_DEBUG
-        nbiot_printf( "sendto(len = %d)\n", ret );
-        output_buffer( (uint8_t*)buff, ret );
+        nbiot_printf( "sendto(%s:%d len = %d)\n",
+                      inet_ntoa( dest->addr.sin_addr ),
+                      ntohs( dest->addr.sin_port ),
+                      ret );
+        nbiot_buffer_printf( buff, ret );
 #endif
     }
 
@@ -296,18 +254,15 @@ int nbiot_udp_recv( nbiot_socket_t    *sock,
     socklen_t len;
     struct sockaddr_in addr;
 
-    if ( NULL == sock ||
-         NULL == buff ||
-         NULL == read ||
-         NULL == src )
+    if ( !sock || !buff || !read || !src )
     {
         return NBIOT_ERR_BADPARAM;
     }
 
-    if ( NULL == *src )
+    if ( !(*src) )
     {
         *src = (nbiot_sockaddr_t*)nbiot_malloc( sizeof(nbiot_sockaddr_t) );
-        if ( NULL == *src )
+        if ( !(*src) )
         {
             return NBIOT_ERR_NO_MEMORY;
         }
@@ -338,24 +293,21 @@ int nbiot_udp_recv( nbiot_socket_t    *sock,
         *read = ret;
         nbiot_memmove( &(*src)->addr, &addr, len );
 #ifdef NBIOT_DEBUG
-        nbiot_printf( "recvfrom(len = %d)\n", ret );
-        output_buffer( (uint8_t*)buff, ret );
+        nbiot_printf( "recvfrom(%s:%d len = %d)\n",
+                      inet_ntoa( addr.sin_addr ),
+                      ntohs( addr.sin_port ),
+                      ret );
+        nbiot_buffer_printf( buff, ret );
 #endif
     }
 
     return NBIOT_ERR_OK;
 }
 
-size_t nbiot_sockaddr_size( const nbiot_sockaddr_t *addr )
-{
-    return sizeof(addr->addr);
-}
-
 bool nbiot_sockaddr_equal( const nbiot_sockaddr_t *addr1,
                            const nbiot_sockaddr_t *addr2 )
 {
-    if ( NULL == addr1 ||
-         NULL == addr2 )
+    if ( !addr1 || !addr2 )
     {
         return false;
     }
@@ -367,7 +319,7 @@ bool nbiot_sockaddr_equal( const nbiot_sockaddr_t *addr1,
 
 void nbiot_sockaddr_destroy( nbiot_sockaddr_t *s )
 {
-    if ( NULL != s )
+    if ( s )
     {
         nbiot_free( s );
     }

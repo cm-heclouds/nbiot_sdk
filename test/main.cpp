@@ -4,9 +4,21 @@
 **/
 
 #include <gtest/gtest.h>
+#include <platform.h>
 
 int main( int argc, char *argv[] )
 {
-    testing::InitGoogleTest( &argc, argv );
-    return RUN_ALL_TESTS();
+    int rc;
+
+    nbiot_init_environment( argc, argv );
+    {
+        testing::InitGoogleTest( &argc, argv );
+        rc = RUN_ALL_TESTS();
+    }
+    nbiot_clear_environment();
+
+    printf( "press any key to exit..." );
+    getchar();
+
+    return rc;
 }

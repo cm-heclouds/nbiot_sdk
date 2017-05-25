@@ -6,23 +6,23 @@
 #include <platform.h>
 #include <winsock2.h>
 
-static bool _nbiot_init_state = false;
-void nbiot_init_environment( void )
+static bool s_init_env = false;
+void nbiot_init_environment( int argc, char *argv[] )
 {
-    if ( !_nbiot_init_state )
+    if ( !s_init_env )
     {
         WSADATA wsa;
 
+        s_init_env = true;
         WSAStartup( MAKEWORD(2,2), &wsa );
-        _nbiot_init_state = true;
     }
 }
 
 void nbiot_clear_environment( void )
 {
-    if ( _nbiot_init_state )
+    if ( s_init_env )
     {
         WSACleanup();
-        _nbiot_init_state = false;
+        s_init_env = false;
     }
 }
