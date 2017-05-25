@@ -1,6 +1,7 @@
 # nbiot_sdk
 OneNET NBIOT C SDK
 ## 目录
+ * Support&Not Support
  * 编译SDK
  * 目录结构
  * 常见问题
