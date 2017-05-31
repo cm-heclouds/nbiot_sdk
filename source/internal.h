@@ -71,7 +71,7 @@ int nbiot_payload( const uint8_t *buffer,
                         payload_len );
     if ( ret )
     {
-        *payload = nbiot_strdup( (char*)source, *payload_len );
+        *payload = (uint8_t*)nbiot_strdup( (char*)source, *payload_len );
     }
 
     return ret;
@@ -196,7 +196,7 @@ typedef enum
         ((x)->state == STATE_REG_UPDATE_PENDING ? NBIOT_ERR_OK : \
         ((x)->state == STATE_REG_UPDATE_NEEDED ? NBIOT_ERR_OK : \
         ((x)->state == STATE_REG_FAILED ? NBIOT_ERR_REG_FAILED : \
-        ((x)->state == STATE_SERVER_RESET ? NBIOT_ERR_SERVER_RESET : NBIOT_ERR_INTERNAL))))))
+        ((x)->state == STATE_SERVER_RESET ? NBIOT_ERR_SERVER_RESET : NBIOT_ERR_PENDING))))))
 
 typedef struct _nbiot_node_t
 {

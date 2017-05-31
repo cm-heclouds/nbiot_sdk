@@ -76,12 +76,12 @@ int nbiot_udp_bind( nbiot_socket_t *sock,
 
     if ( getaddrinfo(addr,temp,&hints,&res) )
     {
-        return NBIOT_ERR_INTERNAL;
+        return NBIOT_ERR_SOCKET;
     }
 
     if ( !res )
     {
-        return NBIOT_ERR_INTERNAL;
+        return NBIOT_ERR_SOCKET;
     }
 
     for ( p = res;
@@ -104,7 +104,7 @@ int nbiot_udp_bind( nbiot_socket_t *sock,
     freeaddrinfo( res );
     if ( INVALID_SOCKET == sock->sock )
     {
-        return NBIOT_ERR_INTERNAL;
+        return NBIOT_ERR_SOCKET;
     }
 
     flag = 1;
@@ -113,7 +113,7 @@ int nbiot_udp_bind( nbiot_socket_t *sock,
         closesocket(sock->sock);
         sock->sock = INVALID_SOCKET;
 
-        return NBIOT_ERR_INTERNAL;
+        return NBIOT_ERR_SOCKET;
     }
 
     return NBIOT_ERR_OK;
@@ -143,12 +143,12 @@ int nbiot_udp_connect( nbiot_socket_t    *sock,
 
     if ( getaddrinfo(addr,temp,&hints,&res) )
     {
-        return NBIOT_ERR_INTERNAL;
+        return NBIOT_ERR_SOCKET;
     }
 
     if ( !res )
     {
-        return NBIOT_ERR_INTERNAL;
+        return NBIOT_ERR_SOCKET;
     }
 
     s = INVALID_SOCKET;
@@ -189,7 +189,7 @@ int nbiot_udp_connect( nbiot_socket_t    *sock,
     }
 
     freeaddrinfo( res );
-    return (INVALID_SOCKET == s ? NBIOT_ERR_INTERNAL : NBIOT_ERR_OK);
+    return (INVALID_SOCKET == s ? NBIOT_ERR_SOCKET : NBIOT_ERR_OK);
 }
 
 int nbiot_udp_send( nbiot_socket_t         *sock,

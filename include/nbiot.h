@@ -88,7 +88,6 @@ typedef void(*nbiot_execute_callback_t)(uint16_t       objid,
  *        endpoint_name 终端名称（imei;imsi）
  *        life_time     存活时长（秒）
  *        local_port    本地UDP绑定端口
- *        read_func     读回调函数
  *        write_func    写回调函数
  *        execute_func  执行回调函数
  * @return 成功返回NBIOT_ERR_OK

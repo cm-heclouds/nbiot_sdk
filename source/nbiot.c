@@ -359,8 +359,8 @@ static void nbiot_handle_request( nbiot_device_t    *dev,
     uint16_t offset;
     uint8_t token[8];
     nbiot_uri_t uri[1];
-    char *payload = NULL;
     char *uri_query = NULL;
+    uint8_t *payload = NULL;
     uint16_t payload_len = 0;
     uint16_t uri_query_len = 0;
     uint32_t accept = UINT32_MAX;
@@ -690,7 +690,7 @@ int nbiot_device_connect( nbiot_device_t *dev,
     ret = nbiot_register_start( dev, buffer, sizeof(buffer) );
     if ( ret )
     {
-        return NBIOT_ERR_INTERNAL;
+        return NBIOT_ERR_REG_FAILED;
     }
 
     last = nbiot_time();
