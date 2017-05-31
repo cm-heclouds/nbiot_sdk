@@ -3,49 +3,52 @@
  * All rights reserved.
 **/
 
-#include <platform.h>
-#include <stdlib.h>
-
 #ifdef NBIOT_DEBUG
-#include <stdio.h>
+#include <utils.h>
+#include <stdlib.h>
+#include <platform.h>
 
-static size_t _last = 100;
-static size_t _total = 0;
-#endif
+static size_t s_total = 0;
+static size_t s_last = 100;
 
 void *nbiot_malloc( size_t size )
 {
-#ifdef NBIOT_DEBUG
     size_t *ptr;
 
-    ptr = (size_t*)malloc( sizeof(size_t) + size );
+    ptr = (size_t*)malloc( sizeof( size_t ) + size );
     *ptr = size;
-    _total += size;
-    if ( _total > _last )
+    s_total += size;
+    if ( s_total > s_last )
     {
-        printf( "nbiot_malloc() %dbytes memories.\n", (int)_total );
-        _last += 100;
+        nbiot_printf( "nbiot_malloc() %dbytes memories.\n", (int)s_total );
+        s_last += 100;
     }
 
-    return (ptr + 1);
-#else
-    return malloc( size );
-#endif
+    return (++ptr);
 }
 
 void nbiot_free( void *ptr )
 {
-#ifdef NBIOT_DEBUG
     if ( NULL != ptr )
     {
         size_t *tmp;
 
         tmp = (size_t*)ptr;
-        --tmp;
-        _total -= *tmp;
+        s_total -= *(--tmp);
         free( tmp );
     }
-#else
-    free( ptr );
-#endif
 }
+#else
+#include <stdlib.h>
+#include <platform.h>
+
+void *nbiot_malloc( size_t size )
+{
+    return malloc( size );
+}
+
+void nbiot_free( void *ptr )
+{
+    free( ptr );
+}
+#endif

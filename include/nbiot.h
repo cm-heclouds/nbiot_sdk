@@ -3,8 +3,8 @@
  * All rights reserved.
 **/
 
-#ifndef NBIOT_INCLUDE_NBIOT_H_
-#define NBIOT_INCLUDE_NBIOT_H_
+#ifndef ONENET_NBIOT_H_
+#define ONENET_NBIOT_H_
 
 #include "error.h"
 #include "config.h"
@@ -15,165 +15,155 @@ extern "C" {
 #endif
 
 /**
- * value类型
+ * value type
 **/
-#define NBIOT_VALUE_UNKNOWN       0x0
-#define NBIOT_VALUE_BOOLEAN       0x1
-#define NBIOT_VALUE_INTEGER       0x2
-#define NBIOT_VALUE_FLOAT         0x3
-#define NBIOT_VALUE_STRING        0x4
-#define NBIOT_VALUE_BINARY        0x5
+#define NBIOT_UNKNOWN       0x0
+#define NBIOT_BOOLEAN       0x1
+#define NBIOT_INTEGER       0x2
+#define NBIOT_FLOAT         0x3
+#define NBIOT_STRING        0x4
+#define NBIOT_BINARY        0x5
 
 /**
- * resource标记
+ * value flag
 **/
-#define NBIOT_RESOURCE_READABLE   0x1
-#define NBIOT_RESOURCE_WRITABLE   0x2
-#define NBIOT_RESOURCE_EXECUTABLE 0x4
+#define NBIOT_READABLE      0x1
+#define NBIOT_WRITABLE      0x2
+#define NBIOT_EXECUTABLE    0x4
+#define NBIOT_UPDATED       0x8
 
 /**
  * value定义
 **/
-typedef union nbiot_value_t
+typedef struct _nbiot_value_t
 {
-    bool     as_bool;
-    int64_t  as_int;
-    double   as_float;
-
-    /* string */
-    struct
+    union
     {
-        char   *str;
-        size_t  len;
-    } as_str;
+        bool    as_bool;
+        int64_t as_int;
+        double  as_float;
+        struct
+        {
+            char  *val;
+            size_t len;
+        } as_buf;
+    } value;
 
-    /* binary */
-    struct
-    {
-        uint8_t *bin;
-        size_t   len;
-    } as_bin;
+    uint8_t type;
+    uint8_t flag;
 } nbiot_value_t;
-
-/**
- * resource声明
-**/
-typedef struct nbiot_resource_t nbiot_resource_t;
-
-/**
- * write回调函数（write成功后执行）
- * @param res 指向nbiot_resource_t内存
-**/
-typedef void(*nbiot_write_callback_t)(nbiot_resource_t *res);
-
-/**
- * execute回调函数（收到execute后执行）
- * @param res    指向nbiot_resource_t内存
- *        buffer 指向接收到的数据缓存
- *        length 数据总字节数
-**/
-typedef void(*nbiot_execute_callback_t)(nbiot_resource_t *res,
-                                        const uint8_t    *buffer,
-                                        int               length);
-
-/**
- * resource定义
-**/
-struct nbiot_resource_t
-{
-    uint16_t                 objid;
-    uint16_t                 instid;
-    uint16_t                 resid;
-    uint8_t                  flag;
-    uint8_t                  type;
-    nbiot_value_t            value;
-    nbiot_write_callback_t   write;
-    nbiot_execute_callback_t execute;
-};
 
 /**
  * device声明
 **/
-typedef struct nbiot_device_t nbiot_device_t;
+typedef struct _nbiot_device_t nbiot_device_t;
+
+/**
+ * write回调函数(write后调用)
+ * @param uri  资源路径信息
+ *        data 资源数据
+**/
+typedef void(*nbiot_write_callback_t)(uint16_t       objid,
+                                      uint16_t       instid,
+                                      uint16_t       resid,
+                                      nbiot_value_t *data);
+
+/**
+ * execute回调函数
+ * @param uri  资源路径信息
+ *        data 资源数据
+ *        buff 指向执行数据缓存
+ *        size 执行数据缓存大小
+**/
+typedef void(*nbiot_execute_callback_t)(uint16_t       objid,
+                                        uint16_t       instid,
+                                        uint16_t       resid,
+                                        nbiot_value_t *data,
+                                        const void    *buff,
+                                        size_t         size);
 
 /**
  * 创建OneNET接入设备实例
- * @param dev           [OUT] 指向nbiot_device_t指针的内存
- *        port          本地UDP绑定端口
+ * @param dev           [OUT] 设备实例
+ *        endpoint_name 终端名称（imei;imsi）
+ *        life_time     存活时长（秒）
+ *        local_port    本地UDP绑定端口
+ *        write_func    写回调函数
+ *        execute_func  执行回调函数
  * @return 成功返回NBIOT_ERR_OK
 **/
-int nbiot_device_create( nbiot_device_t **dev,
-                         uint16_t         local_port );
+int nbiot_device_create( nbiot_device_t         **dev,
+                         const char              *endpoint_name,
+                         int                      life_time,
+                         uint16_t                 local_port,
+                         nbiot_write_callback_t   write_func,
+                         nbiot_execute_callback_t execute_func );
 
 /**
  * 销毁OneNET接入设备实例
- * @param dev 指向nbiot_devie_t的内存
+ * @param dev 设备实例
 **/
 void nbiot_device_destroy( nbiot_device_t *dev );
 
 /**
  * 连接OneNET服务
- * @param dev 指向nbiot_device_t的内存
+ * @param dev        设备实例
  *        server_uri 服务链接地址（例如coap://127.0.0.1:5683）
- *        life_time  保活时间（秒）
+ *        timeout    超时时长（秒）
  * @return 成功返回NBIOT_ERR_OK
 **/
 int nbiot_device_connect( nbiot_device_t *dev,
                           const char     *server_uri,
-                          time_t          life_time );
+                          int             timeout );
 
 /**
- * 关闭与OneNET服务的连接
- * @param dev 指向nbiot_device_t的内存
- * @return 成功返回NBIOT_ERR_OK
+* 关闭与OneNET服务的连接
+* @param dev 设备实例
 **/
-int nbiot_device_close( nbiot_device_t *dev );
+void nbiot_device_close( nbiot_device_t *dev,
+                         int             timeout );
 
 /**
- * 配置设备
- * @param dev 指向nbiot_device_t的内存
- *        endpoint_name device名称("imei;imsi")
- *        auth_code     device鉴权码（OneNET自动生成）
- *        res_array     resources指针数组
- *        res_num       resources总数
- * @return 成功返回NBIOT_ERR_OK
-**/
-int nbiot_device_configure( nbiot_device_t   *dev,
-                            const char       *endpoint_name,
-                            nbiot_resource_t *res_array[],
-                            size_t            res_num );
-
-/**
- * 设备与OneNET服务的连接是否就绪
- * @param dev 指向nbiot_device_t的内存
- * @return 就绪返回true，否则返回false
-**/
-bool nbiot_device_ready( nbiot_device_t *dev );
-
-/**
- * 数据驱动以及设备保活
- * @param dev     指向nbiot_device_t的内存
- *        timeout 执行超时时间（秒）
+ * 驱动设备的数据收发和逻辑处理
+ * @param dev     设备实例
+ *        timeout 超时时长（秒）
  * @return 成功返回NBIOT_ERR_OK
 **/
 int nbiot_device_step( nbiot_device_t *dev,
-                       time_t          timeout );
+                       int             timeout );
 
 /**
- * 主动上报资源数据
- * @param dev    指向nbiot_device_t的内存
- *        objid  object id（对象）
- *        instid object instance id（对象实例）
- *        resid  resource id（属性）
+ * 设备资源添加（只修改状态，未通知server；可用于资源更新）
+ * @param dev  设备实例
+ *        uri  资源地址信息
+ *        data 资源数据
  * @return 成功返回NBIOT_ERR_OK
 **/
-int nbiot_device_notify( nbiot_device_t *dev,
-                         uint16_t        objid,
-                         uint16_t        instid,
-                         uint16_t        resid );
+int nbiot_resource_add( nbiot_device_t *dev,
+                        uint16_t        objid,
+                        uint16_t        instid,
+                        uint16_t        resid,
+                        nbiot_value_t  *data );
+
+/**
+ * 设备资源删除（只修改状态，未通知server）
+ * @param dev  设备实例
+ *        uri  资源地址信息
+ * @return 成功返回NBIOT_ERR_OK
+**/
+int nbiot_resource_del( nbiot_device_t *dev,
+                        uint16_t        objid,
+                        uint16_t        instid,
+                        uint16_t        resid );
+
+/**
+ * 主动同步设备信息（资源改变等）
+ * @param dev     设备实例
+**/
+void nbiot_device_sync( nbiot_device_t *dev );
 
 #ifdef __cplusplus
 } /* extern "C" { */
 #endif
 
-#endif /* NBIOT_INCLUDE_NBIOT_H_ */
+#endif /* ONENET_NBIOT_H_ */

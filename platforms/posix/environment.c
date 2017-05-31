@@ -5,21 +5,21 @@
 
 #include <platform.h>
 
-static bool _nbiot_init_state = false;
-void nbiot_init_environment( void )
+static bool s_init_env = false;
+void nbiot_init_environment( int argc, char *argv[] )
 {
-    if ( !_nbiot_init_state )
+    if ( !s_init_env )
     {
         /* todo */
-        _nbiot_init_state = true;
+        s_init_env = true;
     }
 }
 
 void nbiot_clear_environment( void )
 {
-    if ( _nbiot_init_state )
+    if ( s_init_env )
     {
         /* todo */
-        _nbiot_init_state = false;
+        s_init_env = false;
     }
 }

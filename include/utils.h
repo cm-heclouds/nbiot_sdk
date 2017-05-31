@@ -3,8 +3,8 @@
  * All rights reserved.
 **/
 
-#ifndef NBIOT_INClUDE_UTILS_H_
-#define NBIOT_INClUDE_UTILS_H_
+#ifndef ONENET_UTILS_H_
+#define ONENET_UTILS_H_
 
 #include "platform.h"
 
@@ -23,18 +23,18 @@ int nbiot_strlen( const char *str );
  * 拷贝字符串
  * @param dest 指向目标字符串的内存
  *        src  指向源字符串的内存
- *        size 拷贝字符个数，如果为-1，表示全拷贝
- * @return 返回目标字符串内存指针
+ *        size 拷贝字符个数，-1表示全拷贝
+ * @return 返回拷贝字符总数
 **/
-char* nbiot_strncpy( char       *dest,
-                     const char *src,
-                     int         size );
+int nbiot_strncpy( char       *dest,
+                   const char *src,
+                   int         size );
 
 /**
  * 字符串比较
  * @param str1 指向字符串1的内存
  *        str2 指向字符串2的内存
- *        size 比较字符个数，如果为-1，表示全比较
+ *        size 比较字符个数，-1表示全比较
  * @return str1 < str2 返回负值
  *         str1 = str2 返回0
  *         str1 > str2 返回正值
@@ -45,59 +45,43 @@ int nbiot_strncmp( const char *str1,
 
 /**
  * 创建新的字符串
- * @param str 指向源字符串的内存
+ * @param str  指向源字符串的内存
+ *        size 字符串长度，-1表示整个字符串
  * @return 返回新字符串的内存指针
 **/
-char* nbiot_strdup( const char *str );
+char* nbiot_strdup( const char *str,
+                    int         size );
 
 /**
  * 反向查找字符所在位置
- * @param str 指向源字符串的内存
- *        ch  指定字符
+ * @param str  指向源字符串的内存
+ *        size 源字符串长度,-1表示整个字符串
+ *        ch   指定字符
  * @return 查找成功，返回字符的指针，否则返回NULL
 **/
-char* nbiot_strrchr( const char *str,
-                     char        ch );
-
-/**
- * 格式化输出字符串
- * @return 成功返回字符串长度，否则返回负数值
-**/
-int nbiot_sprintf( char       *buffer,
-                   const char *format,
-                   ... );
-
-/**
- * 格式化输出字符串
- * @return 成功返回字符串长度，否则返回负数值
-**/
-int nbiot_snprintf( char       *buffer,
-                    size_t      length,
-                    const char *format,
-                    ... );
-
-/**
- * 检查指定字符是否是space
- * @param ch 指定字符
- * @return 是space返回非0值，否则返回0值
-**/
-int nbiot_isspace( char ch );
+const char* nbiot_strrchr( const char *str,
+                           int         size,
+                           char        ch );
 
 /**
  * 字符串转换成整数
  * @param str 源字符串
+ *        len 转换字符个数，-1表示整个字符串
  * @return 返回整数
 **/
-int nbiot_atoi( const char *str );
+int nbiot_atoi( const char *str,
+                int         size );
 
 /**
  * 整数转换成字符串
- * @param str 指向目标字符串内存
- *        val 整数
- * @return 返回目标字符串指针
+ * @param val 整数
+ *        str 指向目标字符串内存
+ *        len 字符串内存大小，-1表示足够内存大小
+ * @return 返回转换字符总数
 **/
-char* nbiot_itoa( char *str,
-                  int   val );
+int nbiot_itoa( int   val,
+                char *str,
+                int   size );
 
 /**
  * 拷贝内存块
@@ -132,19 +116,43 @@ void nbiot_memzero( void  *mem,
                     size_t size );
 
 /**
+ * 生成随机数
+ * @return 返回随机整数
+**/
+int nbiot_rand( void );
+
+#ifdef NBIOT_DEBUG
+/**
+ * 检查指定字符是否是space
+ * @param ch 指定字符
+ * @return 是space返回非0值，否则返回0值
+**/
+int nbiot_isspace( int ch );
+
+/**
+* 检查指定字符是否可打印
+* @param ch 指定字符
+* @return 可打印返回非0值，否则返回0值
+**/
+int nbiot_isprint( int ch );
+
+/**
  * 格式化输出函数
  * @param format 格式化字符串
 **/
 void nbiot_printf( const char *format, ... );
 
 /**
- * 生成随机数
- * @return 返回随机整数
+ * 格式化打印内存块信息
+ * @param buf 指向内存块
+ *        len 内存块大小
 **/
-int nbiot_rand( void );
+void nbiot_buffer_printf( const void *buf,
+                          size_t      len );
+#endif
 
 #ifdef __cplusplus
 } /* extern "C" { */
 #endif
 
-#endif /* NBIOT_INClUDE_UTILS_H_ */
+#endif /* ONENET_UTILS_H_ */

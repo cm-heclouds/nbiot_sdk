@@ -3,10 +3,6 @@ cmake_minimum_required(VERSION 3.0)
 project(nbiot_sdk)
 
 option(UNIT_TEST  "unit test" 0)
-option(HAVE_DTLS  "use dtls" 0)
-option(BIG_ENDIAN "big endian" 0)
-option(WITH_LOGS  "print logs" 0)
-option(BOOTSTRAP  "support boostrap" 0)
 
 if(WIN32)
     set(NBIOT_WIN 1)
@@ -16,6 +12,7 @@ if(WIN32)
     if(MSVC)
         add_definitions(-D_CRT_SECURE_NO_WARNINGS)
         add_definitions(-D_CRT_NONSTDC_NO_DEPRECATE)
+        add_definitions(-D_WINSOCK_DEPRECATED_NO_WARNINGS)
         add_definitions(-Dinline=__inline)
 
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /wd4819")
@@ -48,29 +45,27 @@ elseif(UNIX OR CYGWIN)
 endif()
 
 include(${CMAKE_CURRENT_LIST_DIR}/platforms/CMakeLists.txt)
-include(${CMAKE_CURRENT_LIST_DIR}/source/dtls/CMakeLists.txt)
-include(${CMAKE_CURRENT_LIST_DIR}/source/lwm2m/CMakeLists.txt)
 
 add_definitions(
     ${PLATFORMS_DEFINITIONS}
-    ${LWM2M_DEFINITIONS}
-    ${DTLS_DEFINITIONS}
 )
 
 include_directories(
     ${PLATFORMS_INCLUDE}
-    ${LWM2M_INCLUDE}
-    ${DTLS_INCLUDE}
     ${CMAKE_CURRENT_LIST_DIR}/include
 )
 
-aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/source SOURCE)
+file(GLOB INC0 ${PLATFORMS_INCLUDE}/*.h)
+file(GLOB INC1 ${CMAKE_CURRENT_LIST_DIR}/include/*.h)
+file(GLOB INC2 ${CMAKE_CURRENT_LIST_DIR}/source/*.h)
+aux_source_directory(${CMAKE_CURRENT_LIST_DIR}/source SRC)
 
 add_library(
     ${PROJECT_NAME}
-    ${SOURCE}
-    ${DTLS_SOURCE}
-    ${LWM2M_SOURCE}
+    ${INC0}
+    ${INC1}
+    ${INC2}
+    ${SRC}
     ${PLATFORMS_SOURCE}
 )
 
