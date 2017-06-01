@@ -26,12 +26,18 @@ int coap_init_header( coap_t     *coap,
     coap->buffer[3]  = (uint8_t)(mid & 0xff);
     coap->offset     = COAP_HEADER_SIZE + token_len;
     coap->option     = 0;
-    coap->payload    = 0;
 
     /* token */
     if ( token )
     {
-        coap_set_token( coap, token );
+        const uint8_t *source = (const uint8_t*)token;
+        uint8_t *dest = coap->buffer + COAP_HEADER_SIZE;
+
+        while ( token_len )
+        {
+            token_len--;
+            *dest++ = *source++;
+        }
     }
 
     return 0;
@@ -126,52 +132,17 @@ int coap_add_option( coap_t     *coap,
     }
 
     /* option value */
-    while ( length )
+    if ( value )
     {
-        length--;
-        coap->buffer[offset++] = *source++;
+        while ( length )
+        {
+            length--;
+            coap->buffer[offset++] = *source++;
+        }
     }
 
     coap->option = option;
     coap->offset = offset;
-    return 0;
-}
-
-int coap_add_payload( coap_t     *coap,
-                      const void *payload,
-                      uint16_t    length )
-{
-    uint16_t offset = coap->offset;
-    const uint8_t *source = (const uint8_t*)payload;
-
-    if ( coap->payload &&
-         offset + length > coap->size )
-    {
-        return -1;
-    }
-
-    if ( !coap->payload &&
-         offset + length + 1 > coap->size )
-    {
-        return -1;
-    }
-
-    /* payload */
-    if ( length )
-    {
-        if ( !coap->payload )
-        {
-            coap->buffer[coap->offset++] = 0xff;
-        }
-
-        while ( length )
-        {
-            length--;
-            coap->payload++;
-            coap->buffer[coap->offset++] = *source++;
-        }
-    }
-
     return 0;
 }
 
@@ -270,6 +241,7 @@ int coap_option( const uint8_t  *buffer,
     return 0;
 }
 
+#ifdef NBIOT_BOOTSTRAP
 int coap_payload( const uint8_t  *buffer,
                   uint16_t        buffer_len,
                   const uint8_t **payload,
@@ -316,4 +288,57 @@ int coap_payload( const uint8_t  *buffer,
     }
 
     return 0;
+}
+#endif
+
+int coap_add_int_option( coap_t  *coap,
+                         uint16_t option,
+                         uint32_t value )
+{
+    uint8_t buffer[4];
+    uint8_t length = 0;
+
+    while ( value )
+    {
+        length++;
+        buffer[4-length] = (uint8_t)(value & 0xff);
+        value            >>= 8;
+    }
+
+    return coap_add_option( coap,
+                            option,
+                            buffer+4-length,
+                            length );
+}
+
+int coap_int_option( const uint8_t *buffer,
+                     uint16_t       buffer_len,
+                     uint16_t       option,
+                     uint32_t      *value )
+{
+    uint16_t val_len;
+    const uint8_t *val;
+
+    if ( coap_option(buffer,
+                     buffer_len,
+                     option,
+                     &val,
+                     &val_len,
+                     true) )
+    {
+        if ( value )
+        {
+            *value = 0;
+            while ( val_len )
+            {
+                --val_len;
+                *value <<= 8;
+                *value  += *val++;
+            }
+        }
+
+        return 0;
+    }
+
+    return -1;
 }

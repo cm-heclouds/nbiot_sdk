@@ -104,20 +104,6 @@ nbiot_list_t* nbiot_list_del( nbiot_list_t  *head,
     return head;
 }
 
-uint16_t nbiot_list_new_id( nbiot_list_t *head )
-{
-    uint16_t id = 0;
-
-    while ( head &&
-            head->id == id )
-    {
-        id = head->id + 1;
-        head = head->next;
-    }
-
-    return id;
-}
-
 void nbiot_list_free( nbiot_list_t *head )
 {
     while ( head )

@@ -48,7 +48,7 @@ void execute_callback( uint16_t       objid,
                   objid,
                   instid,
                   resid );
-    nbiot_buffer_printf( buff, size );
+    nbiot_buffer_printf( buff, (int)size );
 }
 
 int main( int argc, char *argv[] )
@@ -156,9 +156,7 @@ int main( int argc, char *argv[] )
         ret = nbiot_device_create( &dev,
                                    endpoint_name,
                                    life_time,
-                                   port,
-                                   write_callback,
-                                   execute_callback );
+                                   port );
         if ( ret )
         {
             nbiot_printf( "device create failed, code = %d.\r\n", ret );
@@ -227,7 +225,7 @@ int main( int argc, char *argv[] )
         }
 
         at.type = NBIOT_BINARY;
-        at.flag = NBIOT_READABLE | NBIOT_WRITABLE;
+        at.flag = NBIOT_READABLE;
         at.value.as_buf.len = nbiot_itoa( nbiot_rand(), tmp, 16 );
         at.value.as_buf.val = nbiot_strdup( tmp, dicr.value.as_buf.len );
         ret = nbiot_resource_add( dev,

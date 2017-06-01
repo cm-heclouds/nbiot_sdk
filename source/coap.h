@@ -86,7 +86,6 @@ typedef struct _coap_t
     uint16_t size;
     uint16_t offset;
     uint16_t option;
-    uint16_t payload;
 } coap_t;
 
 /**
@@ -103,19 +102,12 @@ int coap_init_header( coap_t     *coap,
 /**
  * 添加coap协议option值
  * 添加时，必须按option大小的顺序填充。
+ * 其中，value可以为NULL，表示后续填充数据。
 **/
 int coap_add_option( coap_t     *coap,
                      uint16_t    option,
                      const void *value,
                      uint16_t    length );
-
-/**
- * 添coap协议的payload
- * 支持多次填充payload
-**/
-int coap_add_payload( coap_t     *coap,
-                      const void *payload,
-                      uint16_t    length );
 
 /**
  * 获取coap协议option值
@@ -127,19 +119,21 @@ int coap_option( const uint8_t  *buffer,
                  uint16_t       *value_len,
                  bool            first );
 
+#ifdef NBIOT_BOOTSTRAP
 /**
- * 获取coap协议payload
+* 获取coap协议payload
 **/
 int coap_payload( const uint8_t  *buffer,
                   uint16_t        buffer_len,
                   const uint8_t **payload,
                   uint16_t       *payload_len );
+#endif
 
 static inline
 void coap_set_type( coap_t *coap, uint8_t type )
 {
     coap->buffer[0] &= ~COAP_TYPE_MASK;
-    coap->buffer[0] |=  COAP_TYPE_MASK & (type<<COAP_TYPE_POSITION);
+    coap->buffer[0] |= COAP_TYPE_MASK&(type<<COAP_TYPE_POSITION);
 }
 
 static inline
@@ -153,212 +147,6 @@ void coap_set_mid( coap_t *coap, uint16_t mid )
 {
     coap->buffer[2] = (uint8_t)(mid >> 8);
     coap->buffer[3] = (uint8_t)(mid & 0xff);
-}
-
-static inline
-void coap_set_token( coap_t *coap, const void *token )
-{
-    const uint8_t *source = (const uint8_t*)token;
-    uint8_t *dest = coap->buffer + COAP_HEADER_SIZE;
-    uint8_t length = (coap->buffer[0]&COAP_TOKEN_LEN_MASK)>>COAP_TOKEN_LEN_POSITION;
-
-    while ( length )
-    {
-        length--;
-        *dest++ = *source++;
-    }
-}
-
-static inline
-int coap_add_int_option( coap_t  *coap,
-                         uint16_t option,
-                         uint32_t value )
-{
-    uint8_t buffer[4];
-    uint8_t length = 0;
-
-    while ( value )
-    {
-        length++;
-        buffer[4-length] = (uint8_t)(value & 0xff);
-        value            >>= 8;
-    }
-
-    return coap_add_option( coap,
-                            option,
-                            buffer+4-length,
-                            length );
-}
-
-static inline
-int coap_add_str_option( coap_t     *coap,
-                         uint16_t    option,
-                         const char *str,
-                         char        split )
-{
-    const char *src;
-    uint16_t _option = coap->option;
-    uint16_t _offset = coap->offset;
-
-    do
-    {
-        if ( *str &&
-             *str == split )
-        {
-            ++str;
-        }
-
-        src = str;
-        while ( *src &&
-                *src != split )
-        {
-            ++src;
-        }
-
-        if ( coap_add_option(coap,option,str,src-str) )
-        {
-            coap->option = _option;
-            coap->offset = _offset;
-
-            return -1;
-        }
-
-        str = src;
-    } while ( *str );
-
-    return 0;
-}
-
-static inline
-int coap_add_observe( coap_t *coap, uint32_t observe )
-{
-    return coap_add_int_option( coap,
-                                COAP_OPTION_OBSERVE,
-                                observe&0xffffff );
-}
-
-static inline
-int coap_add_location_path( coap_t *coap, const char *local_path )
-{
-    return coap_add_str_option( coap,
-                                COAP_OPTION_LOCATION_PATH,
-                                local_path,
-                                '/' );
-}
-
-static inline
-int coap_add_uri_path( coap_t *coap, const char *uri_path )
-{
-    return coap_add_str_option( coap,
-                                COAP_OPTION_URI_PATH,
-                                uri_path,
-                                '/' );
-}
-
-static inline
-int coap_add_uri_path_segment( coap_t *coap, const char *uri_path_segment )
-{
-    return coap_add_str_option( coap,
-                                COAP_OPTION_URI_PATH,
-                                uri_path_segment,
-                                '\0' );
-}
-
-static inline
-int coap_add_content_type( coap_t *coap, uint16_t content_type )
-{
-    return coap_add_int_option( coap,
-                                COAP_OPTION_CONTENT_TYPE,
-                                content_type );
-}
-
-static inline
-int coap_add_accept( coap_t *coap, uint16_t accept_content_type )
-{
-    return coap_add_int_option( coap,
-                                COAP_OPTION_ACCEPT,
-                                accept_content_type );
-}
-
-static inline
-int coap_add_uri_query( coap_t *coap, const char *uri_query )
-{
-    return coap_add_str_option( coap,
-                                COAP_OPTION_URI_QUERY,
-                                *uri_query == '?' ? (uri_query+1) : uri_query,
-                                '&' );
-}
-
-static inline
-int coap_add_block2( coap_t  *coap,
-                     uint32_t num,
-                     uint8_t  more,
-                     uint16_t size )
-{
-    uint32_t block;
-
-    if ( size < 16 ||
-         size > 2048 ||
-         num  > 0x0fffff )
-    {
-        return -1;
-    }
-
-    block = num << 4;
-    if ( more )
-    {
-        block |= 0x8;
-    }
-
-    size = size >> 5;
-    while ( size )
-    {
-        ++block;
-        size = size >> 1;
-    }
-
-    return coap_add_int_option( coap,
-                                COAP_OPTION_BLOCK2,
-                                block );
-}
-
-static inline
-int coap_add_block1( coap_t  *coap,
-                     uint32_t num,
-                     uint8_t  more,
-                     uint16_t size )
-{
-    uint32_t block;
-
-    if ( size < 16 ||
-         size > 2048 ||
-         num  > 0x0fffff )
-    {
-        return -1;
-    }
-
-    block = num << 4;
-    if ( more )
-    {
-        block |= 0x8;
-    }
-
-    size = size >> 5;
-    while ( size )
-    {
-        ++block;
-        size = size >> 1;
-    }
-
-    return coap_add_int_option( coap,
-                                COAP_OPTION_BLOCK1,
-                                block );
-}
-
-static inline
-uint8_t coap_version( const uint8_t *buffer )
-{
-    return (buffer[0]&COAP_VERSION_MASK)>>COAP_VERSION_POSITION;
 }
 
 static inline
@@ -376,7 +164,7 @@ uint16_t coap_code( const uint8_t *buffer )
 static inline
 uint16_t coap_mid( const uint8_t *buffer )
 {
-    return (((uint16_t)buffer[2])<<8)|buffer[3];
+    return (((uint16_t)buffer[2])<<8) | buffer[3];
 }
 
 static inline
@@ -390,202 +178,13 @@ uint8_t coap_token( const uint8_t *buffer, const uint8_t **token )
     return (buffer[0]&COAP_TOKEN_LEN_MASK)>>COAP_TOKEN_LEN_POSITION;
 }
 
-static inline
+int coap_add_int_option( coap_t  *coap,
+                         uint16_t option,
+                         uint32_t value );
 int coap_int_option( const uint8_t *buffer,
                      uint16_t       buffer_len,
                      uint16_t       option,
-                     uint32_t      *value )
-{
-    uint16_t val_len;
-    const uint8_t *val;
-
-    if ( coap_option(buffer,
-                     buffer_len,
-                     option,
-                     &val,
-                     &val_len,
-                     true) )
-    {
-        if ( value )
-        {
-            *value = 0;
-            while ( val_len )
-            {
-                --val_len;
-                *value <<= 8;
-                *value  += *val++;
-            }
-        }
-
-        return 0;
-    }
-
-    return -1;
-}
-
-static inline
-int coap_str_option( const uint8_t *buffer,
-                     uint16_t       buffer_len,
-                     uint16_t       option,
-                     const char   **value,
-                     uint16_t      *value_len,
-                     bool           first )
-{
-    return coap_option( buffer,
-                        buffer_len,
-                        option,
-                        (const uint8_t**)value,
-                        value_len,
-                        first );
-}
-
-static inline
-int coap_observe( const uint8_t *buffer,
-                  uint16_t       buffer_len,
-                  uint32_t      *observe )
-{
-    return coap_int_option( buffer,
-                            buffer_len,
-                            COAP_OPTION_OBSERVE,
-                            observe );
-}
-
-static inline
-int coap_location_path( const uint8_t  *buffer,
-                        uint16_t        buffer_len,
-                        const char    **local_path,
-                        uint16_t       *local_path_len,
-                        bool            first )
-{
-    return coap_str_option( buffer,
-                            buffer_len,
-                            COAP_OPTION_LOCATION_PATH,
-                            local_path,
-                            local_path_len,
-                            first );
-}
-
-static inline
-int coap_uri_path( const uint8_t  *buffer,
-                   uint16_t        buffer_len,
-                   const char    **uri_path,
-                   uint16_t       *uri_path_len,
-                   bool            first )
-{
-    return coap_str_option( buffer,
-                            buffer_len,
-                            COAP_OPTION_URI_PATH,
-                            uri_path,
-                            uri_path_len,
-                            first );
-}
-
-static inline
-int coap_content_type( const uint8_t *buffer,
-                       uint16_t       buffer_len,
-                       uint32_t      *content_type )
-{
-    return coap_int_option( buffer,
-                            buffer_len,
-                            COAP_OPTION_CONTENT_TYPE,
-                            content_type );
-}
-
-static inline
-int coap_uri_query( const uint8_t  *buffer,
-                    uint16_t        buffer_len,
-                    const char    **uri_query,
-                    uint16_t       *uri_query_len,
-                    bool            first )
-{
-    return coap_str_option( buffer,
-                            buffer_len,
-                            COAP_OPTION_URI_QUERY,
-                            uri_query,
-                            uri_query_len,
-                            first );
-}
-
-static inline
-int coap_accept( const uint8_t *buffer,
-                 uint16_t       buffer_len,
-                 uint32_t      *accept )
-{
-    return coap_int_option( buffer,
-                            buffer_len,
-                            COAP_OPTION_ACCEPT,
-                            accept );
-}
-
-static inline
-int coap_block2( const uint8_t *buffer,
-                 uint16_t       buffer_len,
-                 uint32_t      *num,
-                 uint8_t       *more,
-                 uint16_t      *size )
-{
-    uint32_t block;
-
-    if ( coap_int_option(buffer,
-                         buffer_len,
-                         COAP_OPTION_BLOCK2,
-                         &block) )
-    {
-        if ( num )
-        {
-            *num = block >> 4;
-        }
-
-        if ( more )
-        {
-            *more = block & 0x8;
-        }
-
-        if ( size )
-        {
-            *size = 1 << ((block&0x7) + 5);
-        }
-
-        return 0;
-    }
-
-    return -1;
-}
-
-static inline
-int coap_block1( const uint8_t *buffer,
-                 uint16_t       buffer_len,
-                 uint32_t      *num,
-                 uint8_t       *more,
-                 uint16_t      *size )
-{
-    uint32_t block;
-
-    if ( coap_int_option(buffer,
-                         buffer_len,
-                         COAP_OPTION_BLOCK1,
-                         &block) )
-    {
-        if ( num )
-        {
-            *num = block >> 4;
-        }
-
-        if ( more )
-        {
-            *more = block & 0x8;
-        }
-
-        if ( size )
-        {
-            *size = 1 << ((block&0x7) + 5);
-        }
-
-        return 0;
-    }
-
-    return -1;
-}
+                     uint32_t      *value );
 
 #ifdef __cplusplus
 } /* extern "C" { */

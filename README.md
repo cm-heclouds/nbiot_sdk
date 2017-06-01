@@ -13,23 +13,24 @@ OneNET NBIOT C SDK
 3. observe /object/instance
 4. cancel observe(option) /object/instance
 5. notify
+6. bootstrap
 ### Not Support
-1. bootstrap
-2. update
-3. discover
-4. read
-5. write
-6. execute
-7. create
-8. delete
-9. write attribute
-10. coap block
+1. update
+2. discover
+3. read
+4. write
+5. execute
+6. create
+7. delete
+8. write attribute
+9. coap block
  
 ## 编译SDK
 ### 通过CMAKE编译SDK
 1. 生成调试版本：cmake -DCMAKE_BUILD_TYPE=Debug
 2. 生成发布版本：cmake -DCMAKE_BUILD_TYPE=Release
 3. 生成版本包含单元测试：cmake -DUNIT_TEST=1
+4. 生成版本包含bootstrap：cmake -DBOOTSTRAP=1
 
 ### 自定义工程工程中编译
 1. 将source、platforms目录及其子目录中的源码包含到自定义工程中

@@ -150,3 +150,44 @@ int nbiot_recv_buffer( nbiot_socket_t    *socket,
 
     return recv;
 }
+
+int nbiot_add_uri_query( coap_t     *coap,
+                         const char *key,
+                         const char *value )
+{
+    int len;
+
+    if ( coap_add_option(coap,
+                         COAP_OPTION_URI_QUERY,
+                         NULL,
+                         nbiot_strlen(key)+nbiot_strlen(value)) )
+    {
+        return NBIOT_ERR_NO_MEMORY;
+    }
+
+    len = nbiot_add_string( key,
+                            (char*)coap->buffer + coap->offset,
+                            coap->size - coap->offset );
+    if ( len )
+    {
+        coap->offset += len;
+    }
+    else
+    {
+        return NBIOT_ERR_NO_MEMORY;
+    }
+
+    len = nbiot_add_string( value,
+                            (char*)coap->buffer + coap->offset,
+                            coap->size - coap->offset );
+    if ( len )
+    {
+        coap->offset += len;
+    }
+    else
+    {
+        return NBIOT_ERR_NO_MEMORY;
+    }
+
+    return NBIOT_ERR_OK;
+}

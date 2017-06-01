@@ -28,8 +28,6 @@ extern "C" {
  * value flag
 **/
 #define NBIOT_READABLE      0x1
-#define NBIOT_WRITABLE      0x2
-#define NBIOT_EXECUTABLE    0x4
 #define NBIOT_UPDATED       0x8
 
 /**
@@ -59,45 +57,17 @@ typedef struct _nbiot_value_t
 typedef struct _nbiot_device_t nbiot_device_t;
 
 /**
- * write回调函数(write后调用)
- * @param uri  资源路径信息
- *        data 资源数据
-**/
-typedef void(*nbiot_write_callback_t)(uint16_t       objid,
-                                      uint16_t       instid,
-                                      uint16_t       resid,
-                                      nbiot_value_t *data);
-
-/**
- * execute回调函数
- * @param uri  资源路径信息
- *        data 资源数据
- *        buff 指向执行数据缓存
- *        size 执行数据缓存大小
-**/
-typedef void(*nbiot_execute_callback_t)(uint16_t       objid,
-                                        uint16_t       instid,
-                                        uint16_t       resid,
-                                        nbiot_value_t *data,
-                                        const void    *buff,
-                                        size_t         size);
-
-/**
  * 创建OneNET接入设备实例
  * @param dev           [OUT] 设备实例
  *        endpoint_name 终端名称（imei;imsi）
  *        life_time     存活时长（秒）
  *        local_port    本地UDP绑定端口
- *        write_func    写回调函数
- *        execute_func  执行回调函数
  * @return 成功返回NBIOT_ERR_OK
 **/
-int nbiot_device_create( nbiot_device_t         **dev,
-                         const char              *endpoint_name,
-                         int                      life_time,
-                         uint16_t                 local_port,
-                         nbiot_write_callback_t   write_func,
-                         nbiot_execute_callback_t execute_func );
+int nbiot_device_create( nbiot_device_t **dev,
+                         const char      *endpoint_name,
+                         int              life_time,
+                         uint16_t         local_port );
 
 /**
  * 销毁OneNET接入设备实例
