@@ -18,13 +18,13 @@ OneNET NBIOT C SDK
 8. partial update write
 9. execute
 10. notify
+11. bootstrap
 ### Not Support
-1. bootstrap
-2. replace write
-3. create
-4. delete
-5. write attribute
-6. coap block
+1. replace write
+2. create
+3. delete
+4. write attribute
+5. coap block
  
 ## 编译SDK
 ### 通过CMAKE编译SDK
