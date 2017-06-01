@@ -93,7 +93,8 @@ char* nbiot_strdup( const char *str,
         dest = (char*)nbiot_malloc( size + 1 );
         if ( dest )
         {
-            nbiot_strncpy( dest, str, size );
+            dest[size] = '\0';
+            nbiot_memmove( dest, str, size );
         }
     }
 

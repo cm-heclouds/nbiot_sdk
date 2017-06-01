@@ -119,7 +119,7 @@ int nbiot_observe_del( nbiot_device_t    *dev,
         nbiot_observe_t *obj = (nbiot_observe_t*)NBIOT_LIST_GET( dev->observes, uri->objid );
         if ( !obj )
         {
-            return NBIOT_ERR_NOT_FOUND;
+            return COAP_NOT_FOUND_404;
         }
 
         if ( uri->flag & NBIOT_SET_INSTID )
@@ -127,7 +127,7 @@ int nbiot_observe_del( nbiot_device_t    *dev,
             nbiot_observe_t *inst = (nbiot_observe_t*)NBIOT_LIST_GET( obj->list, uri->instid );
             if ( !inst )
             {
-                return NBIOT_ERR_NOT_FOUND;
+                return COAP_NOT_FOUND_404;
             }
 
             if ( uri->flag & NBIOT_SET_RESID )
@@ -135,7 +135,7 @@ int nbiot_observe_del( nbiot_device_t    *dev,
                 nbiot_observe_t *res = (nbiot_observe_t*)NBIOT_LIST_GET( inst->list, uri->resid );
                 if ( !res )
                 {
-                    return NBIOT_ERR_NOT_FOUND;
+                    return COAP_NOT_FOUND_404;
                 }
 
                 inst->list = (nbiot_observe_t*)NBIOT_LIST_DEL( inst->list, uri->resid, &res );
@@ -155,10 +155,10 @@ int nbiot_observe_del( nbiot_device_t    *dev,
             nbiot_free( obj );
         }
 
-        return NBIOT_ERR_OK;
+        return COAP_CONTENT_205;
     }
 
-    return NBIOT_ERR_BADPARAM;
+    return COAP_BAD_REQUEST_400;
 }
 
 static void observe_read( nbiot_device_t  *dev,

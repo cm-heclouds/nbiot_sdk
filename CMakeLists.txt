@@ -2,7 +2,9 @@ cmake_minimum_required(VERSION 3.0)
 
 project(nbiot_sdk)
 
-option(UNIT_TEST  "unit test" 0)
+option(UNIT_TEST "unit test" 0)
+option(BOOTSTRAP "support bootstrap" 0)
+option(LOCATION  "support location malloc" 0)
 
 if(WIN32)
     set(NBIOT_WIN 1)
@@ -49,6 +51,12 @@ include(${CMAKE_CURRENT_LIST_DIR}/platforms/CMakeLists.txt)
 add_definitions(
     ${PLATFORMS_DEFINITIONS}
 )
+if(BOOTSTRAP)
+    add_definitions(-DNBIOT_BOOTSTRAP)
+endif(BOOTSTRAP)
+if(LOCATION)
+	add_definitions(-DNBIOT_LOCATION)
+endif(LOCATION)
 
 include_directories(
     ${PLATFORMS_INCLUDE}

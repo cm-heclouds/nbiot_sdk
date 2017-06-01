@@ -14,69 +14,6 @@ extern "C" {
 #include <utils.h>
 #include <nbiot.h>
 
-/**
- * coap.h
-**/
-static inline
-int nbiot_token( const uint8_t *buffer,
-                 uint8_t       *token )
-{
-    const uint8_t *tmp;
-    uint8_t token_len;
-
-    token_len = coap_token( buffer, &tmp );
-    if ( token )
-    {
-        nbiot_memmove( token, tmp, token_len );
-    }
-
-    return token_len;
-}
-
-static inline
-int nbiot_uri_query( const uint8_t *buffer,
-                     size_t         buffer_len,
-                     char         **uri_query,
-                     uint16_t      *uri_query_len,
-                     bool           first )
-{
-    int ret;
-    const char *str;
-
-    ret = coap_uri_query( buffer,
-                          buffer_len,
-                          &str,
-                          uri_query_len,
-                          first );
-    if ( ret )
-    {
-        *uri_query = nbiot_strdup( str, *uri_query_len );
-    }
-
-    return ret;
-}
-
-static inline
-int nbiot_payload( const uint8_t *buffer,
-                   size_t         buffer_len,
-                   uint8_t      **payload,
-                   uint16_t      *payload_len )
-{
-    int ret;
-    const uint8_t *source;
-
-    ret = coap_payload( buffer,
-                        buffer_len,
-                        &source,
-                        payload_len );
-    if ( ret )
-    {
-        *payload = (uint8_t*)nbiot_strdup( (char*)source, *payload_len );
-    }
-
-    return ret;
-}
-
 typedef struct _nbiot_list_t
 {
     struct _nbiot_list_t *next;
@@ -177,6 +114,20 @@ int nbiot_recv_buffer( nbiot_socket_t    *socket,
                        nbiot_sockaddr_t **address,
                        uint8_t           *buffer,
                        size_t             buffer_len );
+int nbiot_token( const uint8_t *buffer,
+                 uint8_t       *token );
+int nbiot_payload( const uint8_t *buffer,
+                   size_t         buffer_len,
+                   uint8_t      **payload,
+                   uint16_t      *payload_len );
+int nbiot_uri_query( const uint8_t *buffer,
+                     size_t         buffer_len,
+                     char         **uri_query,
+                     uint16_t      *uri_query_len,
+                     bool           first );
+int nbiot_add_uri_query( coap_t     *coap,
+                         const char *key,
+                         const char *value );
 
 typedef enum
 {
@@ -187,7 +138,11 @@ typedef enum
     STATE_REG_UPDATE_PENDING, /* registration update pending */
     STATE_REG_UPDATE_NEEDED,  /* registration update required */
     STATE_DEREG_PENDING,      /* deregistration pending */
-    STATE_SERVER_RESET           /* server reset */
+    STATE_BS_INITIATED,       /* bootstrap request sent */
+    STATE_BS_PENDING,         /* boostrap on going */
+    STATE_BS_FINISHED,        /* bootstrap done */
+    STATE_BS_FAILED,          /* bootstrap failed */
+    STATE_SERVER_RESET        /* server reset */
 } nbiot_status_t;
 
 #define STATE_ERROR(x) \
@@ -196,7 +151,8 @@ typedef enum
         ((x)->state == STATE_REG_UPDATE_PENDING ? NBIOT_ERR_OK : \
         ((x)->state == STATE_REG_UPDATE_NEEDED ? NBIOT_ERR_OK : \
         ((x)->state == STATE_REG_FAILED ? NBIOT_ERR_REG_FAILED : \
-        ((x)->state == STATE_SERVER_RESET ? NBIOT_ERR_SERVER_RESET : NBIOT_ERR_PENDING))))))
+        ((x)->state == STATE_SERVER_RESET ? NBIOT_ERR_SERVER_RESET : \
+        ((x)->state == STATE_BS_FAILED ? NBIOT_ERR_BS_FAILED : NBIOT_ERR_PENDING)))))))
 
 typedef struct _nbiot_node_t
 {
@@ -205,7 +161,7 @@ typedef struct _nbiot_node_t
     void                 *data;
 } nbiot_node_t;
 
-#ifdef LOCATION_MALLOC
+#ifdef NBIOT_LOCATION
 typedef struct _nbiot_location_t
 {
     struct _nbiot_location_t *next;
@@ -254,7 +210,7 @@ struct _nbiot_device_t
     nbiot_sockaddr_t        *address;       /* temporary address */
     nbiot_node_t            *nodes;
     nbiot_observe_t         *observes;
-#ifdef LOCATION_MALLOC
+#ifdef NBIOT_LOCATION
     nbiot_location_t        *locations;
 #endif
     nbiot_transaction_t     *transactions;
@@ -282,6 +238,19 @@ int nbiot_node_discover( nbiot_node_t      *node,
                          bool               first );
 nbiot_node_t* nbiot_node_find( nbiot_device_t    *dev,
                                const nbiot_uri_t *uri );
+
+#ifdef NBIOT_BOOTSTRAP
+/**
+ * bootstrap.c
+**/
+int nbiot_bootstrap_start( nbiot_device_t *dev,
+                           uint8_t        *buffer,
+                           size_t          buffer_len );
+void nbiot_bootstrap_step( nbiot_device_t *dev,
+                           time_t          now,
+                           uint8_t        *buffer,
+                           size_t          buffer_len );
+#endif
 
 /**
  * registraction.c

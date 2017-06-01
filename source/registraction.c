@@ -5,48 +5,6 @@
 
 #include "internal.h"
 
-static int nbiot_add_uri_query( coap_t     *coap,
-                                const char *key,
-                                const char *value )
-{
-    int ret;
-    int use;
-    uint8_t *buffer;
-    uint16_t offset;
-
-    offset = coap->offset + 5;
-    buffer = coap->buffer + offset;
-    ret = nbiot_add_string( key,
-                            (char*)buffer,
-                            coap->size - offset );
-    if ( !ret )
-    {
-        return -1;
-    }
-
-    use     = ret;
-    buffer += ret;
-    ret = nbiot_add_string( value,
-                            (char*)buffer,
-                            coap->size - offset - use );
-    if ( !ret )
-    {
-        return -1;
-    }
-
-    use += ret;
-    buffer = coap->buffer + offset;
-    if ( coap_add_option(coap,
-                         COAP_OPTION_URI_QUERY,
-                         buffer,
-                         use) )
-    {
-        return -1;
-    }
-
-    return 0;
-}
-
 #define REGISTER_START  1
 #define REGISTER_UPDATE 2
 #define DEREGISTER      3
@@ -91,7 +49,7 @@ static int nbiot_add_header( nbiot_device_t *dev,
     }
     else
     {
-#ifdef LOCATION_MALLOC
+#ifdef NBIOT_LOCATION
         nbiot_location_t *tmp = dev->locations;
         while ( tmp )
         {
@@ -316,15 +274,15 @@ static void registraction_reply( nbiot_device_t *dev,
                                  const uint8_t  *buffer,
                                  size_t          buffer_len )
 {
-    if ( STATE_REG_PENDING == dev->state )
+    if ( dev->state == STATE_REG_PENDING )
     {
         dev->registraction = nbiot_time();
         if ( COAP_CREATED_201 == coap_code(buffer) )
         {
-#ifdef LOCATION_MALLOC
+#ifdef NBIOT_LOCATION
             bool first = true;
             uint16_t location_path_len;
-            const char *location_path = buffer;
+            const char *location_path = (const char*)buffer;
 
             do
             {
@@ -385,8 +343,12 @@ int nbiot_register_start( nbiot_device_t *dev,
                           uint8_t        *buffer,
                           size_t          buffer_len )
 {
-    if ( STATE_REG_FAILED == dev->state ||
-         STATE_DEREGISTERED == dev->state )
+#ifdef NBIOT_BOOTSTRAP
+    if ( dev->state == STATE_BS_FINISHED )
+#else
+    if ( dev->state == STATE_REG_FAILED ||
+         dev->state == STATE_DEREGISTERED )
+#endif
     {
         int ret;
 
@@ -423,7 +385,7 @@ static void registraction_update_reply( nbiot_device_t *dev,
                                         const uint8_t  *buffer,
                                         size_t          buffer_len )
 {
-    if ( STATE_REG_UPDATE_PENDING == dev->state )
+    if ( dev->state == STATE_REG_UPDATE_PENDING )
     {
         dev->registraction = nbiot_time();
         if ( COAP_CHANGED_204 == coap_code(buffer) )
@@ -442,8 +404,8 @@ int nbiot_register_update( nbiot_device_t *dev,
                            size_t          buffer_len,
                            bool            with_objs )
 {
-    if ( STATE_REGISTERED == dev->state ||
-         STATE_REG_UPDATE_NEEDED == dev->state )
+    if ( dev->state == STATE_REGISTERED ||
+         dev->state == STATE_REG_UPDATE_NEEDED )
     {
         int ret;
 
@@ -480,7 +442,7 @@ static void deregister_reply( nbiot_device_t *dev,
                               const uint8_t  *buffer,
                               size_t          buffer_len )
 {
-    if ( STATE_DEREG_PENDING == dev->state )
+    if ( dev->state == STATE_DEREG_PENDING )
     {
         dev->state = STATE_DEREGISTERED;
     }
@@ -490,9 +452,9 @@ int nbiot_deregister( nbiot_device_t *dev,
                       uint8_t        *buffer,
                       size_t          buffer_len )
 {
-    if ( STATE_REGISTERED == dev->state ||
-         STATE_REG_UPDATE_NEEDED == dev->state ||
-         STATE_REG_UPDATE_PENDING == dev->state )
+    if ( dev->state == STATE_REGISTERED ||
+         dev->state == STATE_REG_UPDATE_NEEDED ||
+         dev->state == STATE_REG_UPDATE_PENDING )
     {
         int ret;
 
@@ -530,7 +492,7 @@ void nbiot_register_step( nbiot_device_t *dev,
                           uint8_t        *buffer,
                           size_t          buffer_len )
 {
-    if ( STATE_REGISTERED == dev->state )
+    if ( dev->state == STATE_REGISTERED )
     {
         int next_update = dev->life_time;
         if ( COAP_MAX_TRANSMIT_WAIT < next_update )
@@ -551,7 +513,7 @@ void nbiot_register_step( nbiot_device_t *dev,
         }
     }
 
-    if ( STATE_REG_UPDATE_NEEDED == dev->state )
+    if ( dev->state == STATE_REG_UPDATE_NEEDED )
     {
         nbiot_register_update( dev,
                                buffer,

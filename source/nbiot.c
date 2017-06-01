@@ -5,6 +5,57 @@
 
 #include "internal.h"
 
+static int device_connect( nbiot_device_t *dev,
+                           const char     *uri,
+                           int             uri_len )
+{
+    int ret;
+    const char *addr;
+    const char *port;
+
+    if ( !nbiot_strncmp(uri,"coaps://",8) )
+    {
+        addr = uri + 8;
+    }
+    else if ( !nbiot_strncmp(uri,"coap://",7) )
+    {
+        addr = uri + 7;
+    }
+    else
+    {
+        return NBIOT_ERR_INVALID_URI;
+    }
+
+    port = nbiot_strrchr( uri, uri_len, ':' );
+    if ( !port )
+    {
+        return NBIOT_ERR_INVALID_URI;
+    }
+
+    addr = nbiot_strdup( addr, port - addr );
+    if ( !addr )
+    {
+        return NBIOT_ERR_NO_MEMORY;
+    }
+
+    if ( uri_len > 0 )
+    {
+        uri_len -= (port - uri + 1);
+    }
+
+    ret = nbiot_udp_connect( dev->socket,
+                             addr,
+                             nbiot_atoi(++port,uri_len),
+                             &dev->server );
+    nbiot_free( (void*)addr );
+    if ( ret )
+    {
+        return ret;
+    }
+
+    return NBIOT_ERR_OK;
+}
+
 int nbiot_device_create( nbiot_device_t         **dev,
                          const char              *endpoint_name,
                          int                      life_time,
@@ -52,7 +103,7 @@ int nbiot_device_create( nbiot_device_t         **dev,
     return NBIOT_ERR_OK;
 }
 
-#ifdef LOCATION_MALLOC
+#ifdef NBIOT_LOCATION
 static void device_free_locations( nbiot_device_t *dev )
 {
     nbiot_location_t *next;
@@ -135,7 +186,7 @@ void nbiot_device_destroy( nbiot_device_t *dev )
     nbiot_sockaddr_destroy( dev->server );
     nbiot_udp_close( dev->socket );
     device_free_transactions( dev );
-#ifdef LOCATION_MALLOC
+#ifdef NBIOT_LOCATION
     device_free_locations( dev );
 #endif
     device_free_observes( dev );
@@ -348,11 +399,83 @@ static void handle_observe( nbiot_device_t    *dev,
         handle_read( dev, uri, coap );
     } while (0);
 }
-static void nbiot_handle_request( nbiot_device_t    *dev,
-                                  uint16_t           code,
-                                  uint8_t           *buffer,
-                                  size_t             buffer_len,
-                                  size_t             max_buffer_len )
+
+static void handle_bootstrap( nbiot_device_t    *dev,
+                              const nbiot_uri_t *uri,
+                              coap_t            *coap,
+                              const uint8_t     *payload,
+                              size_t             payload_len,
+                              const char       **svr_uri,
+                              uint16_t          *svr_uri_len )
+{
+    do
+    {
+        if ( uri->objid || !(uri->flag&NBIOT_SET_INSTID) )
+        {
+            coap_set_code( coap, COAP_METHOD_NOT_ALLOWED_405 );
+            break;
+        }
+
+        if ( uri->flag & NBIOT_SET_RESID )
+        {
+            if ( uri->resid )
+            {
+                coap_set_code( coap, COAP_METHOD_NOT_ALLOWED_405 );
+                break;
+            }
+
+            *svr_uri = (const char*)payload;
+            *svr_uri_len = payload_len;
+            dev->state = STATE_BS_FINISHED;
+            coap_set_code( coap, COAP_CHANGED_204 );
+        }
+        else
+        {
+            coap_set_code( coap, COAP_BAD_REQUEST_400 );
+            while ( payload_len )
+            {
+                int ret;
+                uint16_t id;
+                size_t value_len;
+                const uint8_t *value;
+
+                ret = nbiot_tlv_decode( payload,
+                                        payload_len,
+                                        NULL,
+                                        &id,
+                                        &value,
+                                        &value_len );
+                if ( ret )
+                {
+                    payload += ret;
+                    payload_len -= ret;
+                    if ( id )
+                    {
+                        coap_set_code( coap, COAP_METHOD_NOT_ALLOWED_405 );
+                    }
+                    else
+                    {
+                        *svr_uri = (const char*)value;
+                        *svr_uri_len = value_len;
+                        dev->state = STATE_BS_FINISHED;
+                        coap_set_code( coap, COAP_CHANGED_204 );
+                        break;
+                    }
+                }
+                else
+                {
+                    break;
+                }
+            }
+        }
+    } while (0);
+}
+
+static void handle_request( nbiot_device_t    *dev,
+                            uint16_t           code,
+                            uint8_t           *buffer,
+                            size_t             buffer_len,
+                            size_t             max_buffer_len )
 {
     int ret;
     coap_t coap[1];
@@ -361,8 +484,10 @@ static void nbiot_handle_request( nbiot_device_t    *dev,
     nbiot_uri_t uri[1];
     char *uri_query = NULL;
     uint8_t *payload = NULL;
+    const char *svr_uri = NULL;
     uint16_t payload_len = 0;
     uint16_t uri_query_len = 0;
+    uint16_t svr_uri_len = 0;
     uint32_t accept = UINT32_MAX;
     uint32_t observe = UINT32_MAX;
     uint16_t mid = coap_mid( buffer );
@@ -426,11 +551,7 @@ static void nbiot_handle_request( nbiot_device_t    *dev,
             if ( observe == 1 )
             {
                 /* cancel observe */
-                ret = nbiot_observe_del( dev, uri );
-                if ( ret )
-                {
-                    coap_set_code( coap, COAP_NOT_FOUND_404 );
-                }
+                coap_set_code( coap, nbiot_observe_del(dev,uri) );
                 break;
             }
 
@@ -487,6 +608,20 @@ static void nbiot_handle_request( nbiot_device_t    *dev,
 
         if ( COAP_PUT == code )
         {
+#ifdef NBIOT_BOOTSTRAP
+            if ( dev->state == STATE_BS_PENDING )
+            {
+                /* server uri */
+                handle_bootstrap( dev,
+                                  uri,
+                                  coap,
+                                  payload,
+                                  payload_len,
+                                  &svr_uri,
+                                  &svr_uri_len );
+                break;
+            }
+#endif
             if ( uri_query )
             {
                 /* attributes */
@@ -517,19 +652,27 @@ static void nbiot_handle_request( nbiot_device_t    *dev,
         coap->offset = offset;
     }
 
-    nbiot_free( payload );
-    nbiot_free( uri_query );
     nbiot_send_buffer( dev->socket,
                        dev->server,
                        coap->buffer,
                        coap->offset );
+
+    /* try to connect server */
+    if ( svr_uri && dev->state == STATE_BS_FINISHED )
+    {
+        device_connect( dev, svr_uri, svr_uri_len );
+    }
+
+    /* free */
+    nbiot_free( uri_query );
+    nbiot_free( payload );
 }
 
-static void nbiot_handle_transaction( nbiot_device_t *dev,
-                                      uint16_t        code,
-                                      uint8_t        *buffer,
-                                      size_t          buffer_len,
-                                      size_t          max_buffer_len )
+static void handle_transaction( nbiot_device_t *dev,
+                                uint16_t        code,
+                                uint8_t        *buffer,
+                                size_t          buffer_len,
+                                size_t          max_buffer_len )
 {
     uint16_t mid = coap_mid( buffer );
     uint8_t type = coap_type( buffer );
@@ -619,24 +762,31 @@ static void nbiot_handle_buffer( nbiot_device_t *dev,
     uint16_t code = coap_code( buffer );
     if ( COAP_GET <= code && COAP_DELETE >= code )
     {
+#ifdef NBIOT_BOOTSTRAP
+        if ( dev->state == STATE_BS_PENDING ||
+             dev->state == STATE_REGISTERED ||
+             dev->state == STATE_REG_UPDATE_NEEDED ||
+             dev->state == STATE_REG_UPDATE_PENDING )
+#else
         if ( dev->state == STATE_REGISTERED ||
              dev->state == STATE_REG_UPDATE_NEEDED ||
              dev->state == STATE_REG_UPDATE_PENDING )
+#endif
         {
-            nbiot_handle_request( dev,
-                                  code,
-                                  buffer,
-                                  buffer_len,
-                                  max_buffer_len );
+            handle_request( dev,
+                            code,
+                            buffer,
+                            buffer_len,
+                            max_buffer_len );
         }
     }
     else
     {
-        nbiot_handle_transaction( dev,
-                                  code,
-                                  buffer,
-                                  buffer_len,
-                                  max_buffer_len );
+        handle_transaction( dev,
+                            code,
+                            buffer,
+                            buffer_len,
+                            max_buffer_len );
     }
 }
 
@@ -647,51 +797,30 @@ int nbiot_device_connect( nbiot_device_t *dev,
     int ret;
     time_t last;
     time_t curr;
-    const char *addr;
-    const char *port;
     uint8_t buffer[NBIOT_SOCK_BUF_SIZE];
 
-    if ( !nbiot_strncmp(server_uri,"coaps://",8) )
-    {
-        addr = server_uri + 8;
-    }
-    else if ( !nbiot_strncmp(server_uri,"coap://",7) )
-    {
-        addr = server_uri + 7;
-    }
-    else
-    {
-        return NBIOT_ERR_INVALID_URI;
-    }
-
-    port = nbiot_strrchr( server_uri, -1, ':' );
-    if ( !port )
-    {
-        return NBIOT_ERR_INVALID_URI;
-    }
-
-    addr = nbiot_strdup( addr, port - addr );
-    if ( !addr )
-    {
-        return NBIOT_ERR_NO_MEMORY;
-    }
-
-    ret = nbiot_udp_connect( dev->socket,
-                             addr,
-                             nbiot_atoi(++port,-1),
-                             &dev->server );
-    nbiot_free( (void*)addr );
+    ret = device_connect( dev,
+                          server_uri,
+                          -1 );
     if ( ret )
     {
         return ret;
     }
 
+#ifdef NBIOT_BOOTSTRAP
+    ret = nbiot_bootstrap_start( dev, buffer, sizeof(buffer) );
+    if ( ret )
+    {
+        return NBIOT_ERR_BS_FAILED;
+    }
+#else
     /* registraction */
     ret = nbiot_register_start( dev, buffer, sizeof(buffer) );
     if ( ret )
     {
         return NBIOT_ERR_REG_FAILED;
     }
+#endif
 
     last = nbiot_time();
     do
@@ -717,16 +846,38 @@ int nbiot_device_connect( nbiot_device_t *dev,
                                 buffer,
                                 sizeof(buffer) );
 
+#ifdef NBIOT_BOOTSTRAP
+        if ( dev->state == STATE_BS_FINISHED )
+        {
+            /* registraction */
+            ret = nbiot_register_start( dev, buffer, sizeof(buffer) );
+            if ( ret )
+            {
+                return NBIOT_ERR_REG_FAILED;
+            }
+        }
+
+        if ( dev->state == STATE_BS_FAILED )
+        {
+            return NBIOT_ERR_BS_FAILED;
+        }
+#endif
+
         /* ok */
-        if ( STATE_REGISTERED == dev->state )
+        if ( dev->state == STATE_REGISTERED )
         {
             return NBIOT_ERR_OK;
         }
 
         /* failed */
-        if ( STATE_REG_FAILED == dev->state )
+        if ( dev->state == STATE_REG_FAILED )
         {
             return NBIOT_ERR_REG_FAILED;
+        }
+
+        if ( dev->state == STATE_SERVER_RESET )
+        {
+            return NBIOT_ERR_SERVER_RESET;
         }
 
         /* continue */
@@ -773,6 +924,12 @@ void nbiot_device_close( nbiot_device_t *dev,
                                     sizeof( buffer ) );
 
             /* ok */
+#ifdef NBIOT_BOOTSTRAP
+            if ( dev->state == STATE_BS_FAILED )
+            {
+                break;
+            }
+#endif
             if ( dev->state == STATE_REG_FAILED ||
                  dev->state == STATE_DEREGISTERED ||
                  dev->state == STATE_SERVER_RESET )

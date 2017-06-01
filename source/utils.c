@@ -150,3 +150,102 @@ int nbiot_recv_buffer( nbiot_socket_t    *socket,
 
     return recv;
 }
+
+int nbiot_token( const uint8_t *buffer,
+                 uint8_t       *token )
+{
+    const uint8_t *tmp;
+    uint8_t token_len;
+
+    token_len = coap_token( buffer, &tmp );
+    if ( token )
+    {
+        nbiot_memmove( token, tmp, token_len );
+    }
+
+    return token_len;
+}
+
+int nbiot_payload( const uint8_t *buffer,
+                   size_t         buffer_len,
+                   uint8_t      **payload,
+                   uint16_t      *payload_len )
+{
+    int ret;
+    const uint8_t *source;
+
+    ret = coap_payload( buffer,
+                        buffer_len,
+                        &source,
+                        payload_len );
+    if ( ret )
+    {
+        *payload = (uint8_t*)nbiot_strdup( (char*)source, *payload_len );
+    }
+
+    return ret;
+}
+
+int nbiot_uri_query( const uint8_t *buffer,
+                     size_t         buffer_len,
+                     char         **uri_query,
+                     uint16_t      *uri_query_len,
+                     bool           first )
+{
+    int ret;
+    const char *str;
+
+    ret = coap_uri_query( buffer,
+                          buffer_len,
+                          &str,
+                          uri_query_len,
+                          first );
+    if ( ret )
+    {
+        *uri_query = nbiot_strdup( str, *uri_query_len );
+    }
+
+    return ret;
+}
+
+int nbiot_add_uri_query( coap_t     *coap,
+                         const char *key,
+                         const char *value )
+{
+    int ret;
+    int use;
+    uint8_t *buffer;
+    uint16_t offset;
+
+    offset = coap->offset + 5;
+    buffer = coap->buffer + offset;
+    ret = nbiot_add_string( key,
+                            (char*)buffer,
+                            coap->size - offset );
+    if ( !ret )
+    {
+        return -1;
+    }
+
+    use     = ret;
+    buffer += ret;
+    ret = nbiot_add_string( value,
+                            (char*)buffer,
+                            coap->size - offset - use );
+    if ( !ret )
+    {
+        return -1;
+    }
+
+    use += ret;
+    buffer = coap->buffer + offset;
+    if ( coap_add_option(coap,
+                         COAP_OPTION_URI_QUERY,
+                         buffer,
+                         use) )
+    {
+        return -1;
+    }
+
+    return 0;
+}
