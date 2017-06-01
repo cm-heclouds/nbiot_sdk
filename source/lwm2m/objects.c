@@ -245,9 +245,12 @@ coap_status_t object_create( lwm2m_context_t * contextP,
         return COAP_400_BAD_REQUEST;
     }
 
-    targetP = (lwm2m_object_t *)LWM2M_LIST_FIND( contextP->objectList, uriP->objectId );
-    if ( NULL == targetP ) return COAP_404_NOT_FOUND;
-    if ( NULL == targetP->createFunc ) return COAP_405_METHOD_NOT_ALLOWED;
+    if ( uriP->objectId != 0 )
+    {
+        targetP = (lwm2m_object_t *)LWM2M_LIST_FIND( contextP->objectList, uriP->objectId );
+        if ( NULL == targetP ) return COAP_404_NOT_FOUND;
+        if ( NULL == targetP->createFunc ) return COAP_405_METHOD_NOT_ALLOWED;
+    }
 
     size = lwm2m_data_parse( uriP, buffer, length, format, &dataP );
     if ( size <= 0 ) return COAP_400_BAD_REQUEST;
@@ -264,21 +267,61 @@ coap_status_t object_create( lwm2m_context_t * contextP,
             result = COAP_400_BAD_REQUEST;
             goto exit;
         }
-        if ( NULL != lwm2m_list_find( targetP->instanceList, dataP[0].id ) )
+        if ( uriP->objectId != 0 )
         {
-            /* Instance already exists */
-            result = COAP_406_NOT_ACCEPTABLE;
-            goto exit;
+            if ( NULL != lwm2m_list_find( targetP->instanceList, dataP[0].id ) )
+            {
+                /* Instance already exists */
+                result = COAP_406_NOT_ACCEPTABLE;
+                goto exit;
+            }
+            result = targetP->createFunc( dataP[0].id, dataP[0].value.asChildren.count, dataP[0].value.asChildren.array, targetP );
+            uriP->instanceId = dataP[0].id;
+            uriP->flag |= LWM2M_URI_FLAG_INSTANCE_ID;
         }
-        result = targetP->createFunc( dataP[0].id, dataP[0].value.asChildren.count, dataP[0].value.asChildren.array, targetP );
-        uriP->instanceId = dataP[0].id;
-        uriP->flag |= LWM2M_URI_FLAG_INSTANCE_ID;
+        else
+        {
+            int i;
+            result = COAP_400_BAD_REQUEST;
+            for ( i = 0; i < dataP[0].value.asChildren.count; ++i )
+            {
+                if ( dataP[0].value.asChildren.array[i].id == 0 )
+                {
+                    ((lwm2m_userdata_t*)contextP->userData)->svr_uri = nbiot_malloc( dataP[0].value.asChildren.array[i].value.asBuffer.length );
+                    nbiot_memmove( ((lwm2m_userdata_t*)contextP->userData)->svr_uri,
+                                   dataP[0].value.asChildren.array[i].value.asBuffer.buffer,
+                                   dataP[0].value.asChildren.array[i].value.asBuffer.length );
+                    ((lwm2m_userdata_t*)contextP->userData)->svr_uri[dataP[0].value.asChildren.array[i].value.asBuffer.length] = '\0';
+                    result = COAP_201_CREATED;
+                    break;
+                }
+            }
+        }
         break;
 
         default:
-        uriP->instanceId = lwm2m_list_newId( targetP->instanceList );
-        uriP->flag |= LWM2M_URI_FLAG_INSTANCE_ID;
-        result = targetP->createFunc( uriP->instanceId, size, dataP, targetP );
+        if ( uriP->objectId == 0 )
+        {
+            if ( dataP->id == 0 )
+            {
+                ((lwm2m_userdata_t*)contextP->userData)->svr_uri = nbiot_malloc( dataP->value.asBuffer.length );
+                nbiot_memmove( ((lwm2m_userdata_t*)contextP->userData)->svr_uri,
+                               dataP->value.asBuffer.buffer,
+                               dataP->value.asBuffer.length );
+                ((lwm2m_userdata_t*)contextP->userData)->svr_uri[dataP->value.asBuffer.length] = '\0';
+                result = COAP_201_CREATED;
+            }
+            else
+            {
+                result = COAP_400_BAD_REQUEST;
+            }
+        }
+        else
+        {
+            uriP->instanceId = lwm2m_list_newId( targetP->instanceList );
+            uriP->flag |= LWM2M_URI_FLAG_INSTANCE_ID;
+            result = targetP->createFunc( uriP->instanceId, size, dataP, targetP );
+        }
         break;
     }
 
@@ -551,7 +594,12 @@ int object_getServers( lwm2m_context_t *contextP )
     nbiot_memzero( targetP, sizeof(lwm2m_server_t) );
     targetP->binding = BINDING_U; /* 目前只支持UDP */
     targetP->lifetime = LWM2M_UINT32(userData->lifetime);
+#ifdef LWM2M_BOOTSTRAP
+    if ( NULL == userData->svr_uri &&
+         userData->flag & LWM2M_USERDATA_BOOTSTRAP )
+#else
     if ( userData->flag & LWM2M_USERDATA_BOOTSTRAP )
+#endif
     {
         contextP->bootstrapServerList = (lwm2m_server_t*)LWM2M_LIST_ADD( contextP->bootstrapServerList, targetP );
     }

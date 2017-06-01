@@ -94,6 +94,13 @@ void* lwm2m_connect_server( uint16_t sec_instid,
         return NULL;
     }
 
+#ifdef LWM2M_BOOTSTRAP
+    if ( dev->data.svr_uri )
+    {
+        uri = dev->data.svr_uri;
+    }
+#endif
+
     /* parse uri in the form "coaps://[host]:[port]" */
     if ( !nbiot_strncmp(uri,"coaps://",8) )
     {

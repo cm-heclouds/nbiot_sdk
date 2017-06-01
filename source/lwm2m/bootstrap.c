@@ -129,20 +129,10 @@ void bootstrap_step( lwm2m_context_t * contextP,
             case STATE_DEREGISTERED:
             targetP->registration = currentTime + targetP->lifetime;
             targetP->status = STATE_BS_HOLD_OFF;
+            prv_requestBootstrap( contextP, targetP );
             if ( *timeoutP > targetP->lifetime )
             {
                 *timeoutP = targetP->lifetime;
-            }
-            break;
-
-            case STATE_BS_HOLD_OFF:
-            if ( targetP->registration <= currentTime )
-            {
-                prv_requestBootstrap( contextP, targetP );
-            }
-            else if ( *timeoutP > targetP->registration - currentTime )
-            {
-                *timeoutP = targetP->registration - currentTime;
             }
             break;
 
@@ -354,7 +344,7 @@ coap_status_t bootstrap_handleCommand( lwm2m_context_t * contextP,
         {
             if ( LWM2M_URI_IS_SET_INSTANCE( uriP ) )
             {
-                if ( object_isInstanceNew( contextP, uriP->objectId, uriP->instanceId ) )
+                if ( ((lwm2m_userdata_t*)contextP->userData)->svr_uri == NULL )
                 {
                     result = object_create( contextP, uriP, format, message->payload, message->payload_len );
                     if ( COAP_201_CREATED == result )

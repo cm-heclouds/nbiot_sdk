@@ -173,9 +173,6 @@ static int prv_updateRegistration( lwm2m_context_t * contextP,
     lwm2m_transaction_t * transaction;
     uint8_t payload[256];
     int payload_length;
-    char query[64];
-    int query_length;
-    int res;
 
     if ( contextP->endpointName == NULL )
     {
@@ -186,15 +183,6 @@ static int prv_updateRegistration( lwm2m_context_t * contextP,
     if ( transaction == NULL ) return COAP_500_INTERNAL_SERVER_ERROR;
 
     coap_set_header_uri_path( transaction->message, server->location );
-    /* endpoint name */
-    {
-        query_length = utils_stringCopy( query, PRV_QUERY_BUFFER_LENGTH, "?ep=" );
-        if ( query_length < 0 ) return COAP_500_INTERNAL_SERVER_ERROR;
-        res = utils_stringCopy( query + query_length, PRV_QUERY_BUFFER_LENGTH - query_length, contextP->endpointName );
-        if ( res < 0 ) return COAP_500_INTERNAL_SERVER_ERROR;
-        query_length += res;
-        coap_set_header_uri_query( transaction->message, query );
-    }
 
     if ( withObjects == true )
     {
@@ -370,8 +358,6 @@ static void prv_handleDeregistrationReply( lwm2m_transaction_t * transacP,
 void registration_deregister( lwm2m_context_t * contextP,
                               lwm2m_server_t * serverP )
 {
-    char query[64];
-    int query_length;
     lwm2m_transaction_t * transaction;
 
     LOG_ARG( "State: %s, serverP->status: %s", STR_STATE( contextP->state ), STR_STATUS( serverP->status ) );
@@ -389,21 +375,7 @@ void registration_deregister( lwm2m_context_t * contextP,
     transaction = transaction_new( COAP_TYPE_CON, COAP_DELETE, NULL, NULL, contextP->nextMID++, 4, NULL, ENDPOINT_SERVER, (void *)serverP );
     if ( transaction == NULL ) return;
 
-    /* endpoint name */
-    if ( contextP->endpointName != NULL )
-    {
-        int res;
-
-        query_length = utils_stringCopy( query, PRV_QUERY_BUFFER_LENGTH, "?ep=" );
-        if ( query_length < 0 ) return;
-        res = utils_stringCopy( query + query_length, PRV_QUERY_BUFFER_LENGTH - query_length, contextP->endpointName );
-        if ( res < 0 ) return;
-        query_length += res;
-    }
-
     coap_set_header_uri_path( transaction->message, serverP->location );
-    coap_set_header_uri_query( transaction->message, query );
-
     transaction->callback = prv_handleDeregistrationReply;
     transaction->userData = (void *)contextP;
 

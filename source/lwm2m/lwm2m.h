@@ -514,6 +514,9 @@ typedef uint8_t uint24_t[3];
 typedef struct
 {
     const char *uri;
+#ifdef LWM2M_BOOTSTRAP
+    char       *svr_uri;
+#endif
     uint24_t    lifetime;
     uint8_t     flag;
 } lwm2m_userdata_t;

@@ -219,53 +219,6 @@ static size_t coap_serialize_int_option( unsigned int number,
     return i;
 }
 
-static size_t coap_serialize_array_option( unsigned int number,
-                                           unsigned int current_number,
-                                           uint8_t     *buffer,
-                                           uint8_t     *array,
-                                           size_t       length,
-                                           char         split_char )
-{
-    size_t i = 0;
-
-    if ( split_char != '\0' )
-    {
-        size_t j;
-        uint8_t *part_start = array;
-        uint8_t *part_end = NULL;
-        size_t temp_length;
-
-        for ( j = 0; j <= length; ++j )
-        {
-            if ( array[j] == split_char || j == length )
-            {
-                part_end = array + j;
-                temp_length = part_end - part_start;
-
-                i += coap_set_option_header( number - current_number, temp_length, &buffer[i] );
-                nbiot_memmove( &buffer[i], part_start, temp_length );
-                i += temp_length;
-
-                PRINTF( "OPTION type %u, delta %u, len %u, part [%.*s]\n", number, number - current_number, i, temp_length, part_start );
-
-                ++j; /* skip the splitter */
-                current_number = number;
-                part_start = array + j;
-            }
-        } /* for */
-    }
-    else
-    {
-        i += coap_set_option_header( number - current_number, length, &buffer[i] );
-        nbiot_memmove( &buffer[i], array, length );
-        i += length;
-
-        PRINTF( "OPTION type %u, delta %u, len %u\n", number, number - current_number, length );
-    }
-
-    return i;
-}
-
 static  size_t coap_serialize_multi_option( unsigned int    number,
                                             unsigned int    current_number,
                                             uint8_t        *buffer,
