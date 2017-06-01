@@ -246,10 +246,6 @@ nbiot_node_t* nbiot_node_find( nbiot_device_t    *dev,
 int nbiot_bootstrap_start( nbiot_device_t *dev,
                            uint8_t        *buffer,
                            size_t          buffer_len );
-void nbiot_bootstrap_step( nbiot_device_t *dev,
-                           time_t          now,
-                           uint8_t        *buffer,
-                           size_t          buffer_len );
 #endif
 
 /**
