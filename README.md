@@ -31,6 +31,7 @@ OneNET NBIOT C SDK
 1. 生成调试版本：cmake -DCMAKE_BUILD_TYPE=Debug
 2. 生成发布版本：cmake -DCMAKE_BUILD_TYPE=Release
 3. 生成版本包含单元测试：cmake -DUNIT_TEST=1
+4. 生成版本包含bootstrap：cmake -DBOOTSTRAP=1
 
 ### 自定义工程工程中编译
 1. 将source、platforms目录及其子目录中的源码包含到自定义工程中
