@@ -283,10 +283,12 @@ coap_status_t object_create( lwm2m_context_t * contextP,
         {
             int i;
             result = COAP_400_BAD_REQUEST;
+#ifdef LWM2M_BOOTSTRAP
             for ( i = 0; i < dataP[0].value.asChildren.count; ++i )
             {
                 if ( dataP[0].value.asChildren.array[i].id == 0 )
                 {
+
                     ((lwm2m_userdata_t*)contextP->userData)->svr_uri = nbiot_malloc( dataP[0].value.asChildren.array[i].value.asBuffer.length );
                     nbiot_memmove( ((lwm2m_userdata_t*)contextP->userData)->svr_uri,
                                    dataP[0].value.asChildren.array[i].value.asBuffer.buffer,
@@ -296,12 +298,14 @@ coap_status_t object_create( lwm2m_context_t * contextP,
                     break;
                 }
             }
+#endif
         }
         break;
 
         default:
         if ( uriP->objectId == 0 )
         {
+#ifdef LWM2M_BOOTSTRAP
             if ( dataP->id == 0 )
             {
                 ((lwm2m_userdata_t*)contextP->userData)->svr_uri = nbiot_malloc( dataP->value.asBuffer.length );
@@ -312,6 +316,7 @@ coap_status_t object_create( lwm2m_context_t * contextP,
                 result = COAP_201_CREATED;
             }
             else
+#endif
             {
                 result = COAP_400_BAD_REQUEST;
             }
