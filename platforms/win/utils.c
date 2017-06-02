@@ -117,11 +117,12 @@ char* nbiot_strdup( const char *str )
         return NULL;
     }
 
-    len = nbiot_strlen(str) + 1;
-    dst = (char*)nbiot_malloc( len );
+    len = nbiot_strlen(str);
+    dst = (char*)nbiot_malloc( len + 1 );
     if ( NULL != dst )
     {
-        nbiot_strncpy( dst, str, len );
+        dst[len] = '\0';
+        nbiot_memmove( dst, str, len );
     }
 
     return dst;
