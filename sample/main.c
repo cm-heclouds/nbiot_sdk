@@ -287,8 +287,8 @@ int main( int argc, char *argv[] )
     } while(0);
     nbiot_clear_environment();
 
-    getchar();
     nbiot_printf( "press enter key to exit..." );
+    getchar();
 
     return 0;
 }
