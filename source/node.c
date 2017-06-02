@@ -5,86 +5,6 @@
 
 #include "internal.h"
 
-static int nbiot_node_length( nbiot_node_t *node,
-                              uint8_t       flag,
-                              bool          updated )
-{
-    if ( flag & NBIOT_SET_RESID )
-    {
-        nbiot_value_t *data = (nbiot_value_t*)node->data;
-        if ( !updated || (data->flag&NBIOT_UPDATED) )
-        {
-            if ( data->type == NBIOT_BOOLEAN )
-            {
-                return 1;
-            }
-
-            if ( data->type == NBIOT_INTEGER )
-            {
-                uint8_t len = 0;
-                int64_t val = data->value.as_int;
-
-                while ( val )
-                {
-                    ++len;
-                    val >>= 8;
-                }
-
-                return len;
-            }
-
-            if ( data->type == NBIOT_FLOAT )
-            {
-                if ( data->value.as_float < -(double)FLT_MAX ||
-                     data->value.as_float >  (double)FLT_MAX )
-                {
-                    return 8;
-                }
-                else
-                {
-                    return 4;
-                }
-            }
-
-            if ( data->type == NBIOT_STRING ||
-                 data->type == NBIOT_BINARY )
-            {
-                return data->value.as_buf.len;
-            }
-        }
-    }
-    else if ( flag & NBIOT_SET_OBJID )
-    {
-        int len = 0;
-
-        if ( flag & NBIOT_SET_INSTID )
-        {
-            flag |= NBIOT_SET_RESID;
-        }
-        else
-        {
-            flag |= NBIOT_SET_INSTID;
-        }
-
-        for ( node = (nbiot_node_t*)node->data;
-              node != NULL;
-              node = node->next )
-        {
-            int ret = nbiot_node_length( node,
-                                         flag,
-                                         updated );
-            if ( ret )
-            {
-                len += nbiot_tlv_length( node->id, ret );
-            }
-        }
-
-        return len;
-    }
-
-    return 0;
-}
-
 int nbiot_node_read( nbiot_node_t *node,
                      uint8_t       flag,
                      uint8_t      *buffer,
@@ -100,7 +20,6 @@ int nbiot_node_read( nbiot_node_t *node,
             uint8_t *value = NULL;
             size_t value_len = 0;
 
-            data->flag &= ~NBIOT_UPDATED;
             if ( data->type == NBIOT_BOOLEAN )
             {
                 array[0] = data->value.as_bool ? 1 : 0;
@@ -160,18 +79,19 @@ int nbiot_node_read( nbiot_node_t *node,
             if ( value &&
                  value_len <= buffer_len )
             {
+                data->flag &= ~NBIOT_UPDATED;
                 nbiot_memmove( buffer,
                                value,
                                value_len );
-
-                return value_len;
             }
+
+            return value_len;
         }
     }
     else if ( flag & NBIOT_SET_OBJID )
     {
-        int ret;
         int len;
+        int ret = 0;
         int num = 0;
         uint8_t type;
 
@@ -190,29 +110,32 @@ int nbiot_node_read( nbiot_node_t *node,
               node != NULL;
               node = node->next )
         {
-            len = nbiot_node_length( node, flag, updated );
+            len = nbiot_node_read( node, flag, NULL, 0, updated );
             if ( len )
             {
-                ret = nbiot_tlv_encode( buffer + num,
-                                        buffer_len - num,
-                                        type,
-                                        node->id,
-                                        NULL,
-                                        len );
-                if ( ret )
+                if ( buffer )
                 {
-                    ret += nbiot_node_read( node,
-                                            flag,
-                                            buffer + num + ret,
-                                            buffer_len - num - ret,
-                                            updated );
+                    ret = nbiot_tlv_encode( buffer + num,
+                                            buffer_len - num,
+                                            type,
+                                            node->id,
+                                            NULL,
+                                            len );
+                    if ( ret )
+                    {
+                        ret += nbiot_node_read( node,
+                                                flag,
+                                                buffer + num + ret,
+                                                buffer_len - num - ret,
+                                                updated );
+                    }
                 }
-            }
 
-            len = nbiot_tlv_length( node->id, len );
-            if ( len == ret )
-            {
-                num += len;
+                len = nbiot_tlv_length( node->id, len );
+                if ( !buffer || len == ret )
+                {
+                    num += len;
+                }
             }
         }
 

@@ -39,9 +39,9 @@ int nbiot_bootstrap_start( nbiot_device_t *dev,
     }
 
     /* uri query - endpoint name */
-    if ( nbiot_add_uri_query( coap,
-                              "ep=",
-                              dev->endpoint_name ) )
+    if ( nbiot_add_uri_query(coap,
+                             "ep=",
+                             dev->endpoint_name) )
     {
         return NBIOT_ERR_NO_MEMORY;
     }
