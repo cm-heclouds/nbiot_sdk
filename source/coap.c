@@ -190,7 +190,7 @@ static int coap_nibble( const uint8_t *buffer,
     if ( 14 == *nibble )
     {
         ret      = 2;
-        *nibble  = buffer[0];
+        *nibble  = (uint16_t)buffer[0] << 8;
         *nibble |= buffer[1];
         *nibble += 269;
     }
