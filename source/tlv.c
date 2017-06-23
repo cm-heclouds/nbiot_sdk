@@ -16,9 +16,17 @@ int nbiot_tlv_length( uint16_t id, size_t len )
         ++ret;
     }
 
-    while ( len >>= 8 )
+    if ( len > 0xffff )
     {
-        ++ret;
+        ret += 3;
+    }
+    else if ( len > 0xff )
+    {
+        ret += 2;
+    }
+    else if ( len > 0x7 )
+    {
+        ret += 1;
     }
 
     return ret;
