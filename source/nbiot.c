@@ -195,12 +195,27 @@ static void handle_observe( nbiot_device_t    *dev,
             break;
         }
 
+        /* observe */
+        if ( coap_add_int_option(coap,
+                                 COAP_OPTION_OBSERVE,
+                                 tmp->counter++) )
+        {
+            coap_set_code( coap, COAP_INTERNAL_SERVER_ERROR_500 );
+        }
+        else
+        {
+            coap_set_code( coap, COAP_CONTENT_205 );
+        }
+
+        /* fix: observe的ACK不携带设备数据 */
+        /*
         ret = nbiot_observe_read( dev,
                                   uri,
                                   tmp,
                                   coap,
                                   false );
         coap_set_code( coap, ret );
+        */
     } while (0);
 }
 
