@@ -6,9 +6,18 @@
 #include "internal.h"
 
 #ifdef NBIOT_BOOTSTRAP
+#ifdef NOTIFY_ACK
+static void bootstrap_reply( nbiot_device_t    *dev,
+                             const uint8_t     *buffer,
+                             size_t             buffer_len,
+                             bool               ack,
+                             const nbiot_uri_t *uri )
+#else
 static void bootstrap_reply( nbiot_device_t *dev,
                              const uint8_t  *buffer,
-                             size_t          buffer_len )
+                             size_t          buffer_len,
+                             bool            ack )
+#endif
 {
     if ( dev->state == STATE_BS_INITIATED )
     {
@@ -80,12 +89,20 @@ int nbiot_bootstrap_start( nbiot_device_t *dev,
         }
 
         dev->state = STATE_BS_INITIATED;
+#ifdef NOTIFY_ACK
+        nbiot_transaction_add( dev,
+                               coap->buffer,
+                               coap->offset,
+                               bootstrap_reply,
+                               NULL );
+#else
         nbiot_transaction_add( dev,
                                coap->buffer,
                                coap->offset,
                                bootstrap_reply );
+#endif
     }
 
     return COAP_NO_ERROR;
 }
-#endif
+#endif /* NBIOT_BOOTSTRAP */

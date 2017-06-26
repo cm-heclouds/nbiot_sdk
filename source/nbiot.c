@@ -56,12 +56,22 @@ static int device_connect( nbiot_device_t *dev,
     return NBIOT_ERR_OK;
 }
 
+#ifdef NOTIFY_ACK
+int nbiot_device_create( nbiot_device_t            **dev,
+                         const char                 *endpoint_name,
+                         int                         life_time,
+                         uint16_t                    local_port,
+                         nbiot_write_callback_t      write_func,
+                         nbiot_execute_callback_t    execute_func,
+                         nbiot_notify_ack_callback_t notify_ack_func )
+#else
 int nbiot_device_create( nbiot_device_t         **dev,
                          const char              *endpoint_name,
                          int                      life_time,
                          uint16_t                 local_port,
                          nbiot_write_callback_t   write_func,
                          nbiot_execute_callback_t execute_func )
+#endif
 {
     int ret;
     nbiot_device_t *tmp;
@@ -98,6 +108,9 @@ int nbiot_device_create( nbiot_device_t         **dev,
     tmp->life_time = life_time;
     tmp->write_func = write_func;
     tmp->execute_func = execute_func;
+#ifdef NOTIFY_ACK
+    tmp->notify_ack_func = notify_ack_func;
+#endif
     tmp->endpoint_name = endpoint_name;
 
     return NBIOT_ERR_OK;
@@ -716,6 +729,7 @@ static void handle_transaction( nbiot_device_t *dev,
              COAP_UNAUTHORIZED_401 != code ||
              COAP_MAX_RETRANSMIT <= transaction->counter )
         {
+            transaction->ack = true;
             nbiot_transaction_del( dev,
                                    mid,
                                    buffer,

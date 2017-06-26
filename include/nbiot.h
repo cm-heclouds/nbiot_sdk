@@ -60,8 +60,10 @@ typedef struct _nbiot_device_t nbiot_device_t;
 
 /**
  * write回调函数(write后调用)
- * @param uri  资源路径信息
- *        data 资源数据
+ * @param objid  object id
+ *        instid object instance id
+ *        resid  resource id
+ *        data   资源数据
 **/
 typedef void(*nbiot_write_callback_t)(uint16_t       objid,
                                       uint16_t       instid,
@@ -70,10 +72,12 @@ typedef void(*nbiot_write_callback_t)(uint16_t       objid,
 
 /**
  * execute回调函数
- * @param uri  资源路径信息
- *        data 资源数据
- *        buff 指向执行数据缓存
- *        size 执行数据缓存大小
+ * @param objid  object id
+ *        instid object instance id
+ *        resid  resource id
+ *        data   资源数据
+ *        buff   指向执行数据缓存
+ *        size   执行数据缓存大小
 **/
 typedef void(*nbiot_execute_callback_t)(uint16_t       objid,
                                         uint16_t       instid,
@@ -81,6 +85,22 @@ typedef void(*nbiot_execute_callback_t)(uint16_t       objid,
                                         nbiot_value_t *data,
                                         const void    *buff,
                                         size_t         size);
+
+#ifdef NOTIFY_ACK
+/**
+ * notify的ack回调
+ * @param objid  object id
+ *        instid object instance id
+ *        resid  resource id
+ *        data   资源数据
+ *        ack    ack成功失败
+**/
+typedef void(*nbiot_notify_ack_callback_t)(uint16_t       objid,
+                                           uint16_t       instid,
+                                           uint16_t       resid,
+                                           nbiot_value_t *data,
+                                           bool           ack);
+#endif
 
 /**
  * 创建OneNET接入设备实例
@@ -92,12 +112,22 @@ typedef void(*nbiot_execute_callback_t)(uint16_t       objid,
  *        execute_func  执行回调函数
  * @return 成功返回NBIOT_ERR_OK
 **/
+#ifdef NOTIFY_ACK
+int nbiot_device_create( nbiot_device_t            **dev,
+                         const char                 *endpoint_name,
+                         int                         life_time,
+                         uint16_t                    local_port,
+                         nbiot_write_callback_t      write_func,
+                         nbiot_execute_callback_t    execute_func,
+                         nbiot_notify_ack_callback_t notify_ack_func);
+#else
 int nbiot_device_create( nbiot_device_t         **dev,
                          const char              *endpoint_name,
                          int                      life_time,
                          uint16_t                 local_port,
                          nbiot_write_callback_t   write_func,
                          nbiot_execute_callback_t execute_func );
+#endif
 
 /**
  * 销毁OneNET接入设备实例

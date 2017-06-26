@@ -1,6 +1,6 @@
 ﻿/**
-* Copyright (c) 2017 China Mobile IOT.
-* All rights reserved.
+ * Copyright (c) 2017 China Mobile IOT.
+ * All rights reserved.
 **/
 
 #ifndef ONENET_CONFIG_H_

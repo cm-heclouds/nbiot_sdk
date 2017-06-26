@@ -161,12 +161,107 @@ int nbiot_observe_del( nbiot_device_t    *dev,
     return COAP_BAD_REQUEST_400;
 }
 
-static void observe_read( nbiot_device_t  *dev,
-                          nbiot_observe_t *observe,
-                          nbiot_node_t    *node,
-                          uint8_t          flag,
-                          uint8_t         *buffer,
-                          size_t           buffer_len )
+#ifdef NOTIFY_ACK
+static void do_notify_ack( nbiot_device_t    *dev,
+                           const uint8_t     *buffer,
+                           size_t             buffer_len,
+                           bool               ack,
+                           const nbiot_uri_t *uri )
+{
+    nbiot_node_t *node = nbiot_node_find( dev, uri );
+    if ( node )
+    {
+        if ( uri->flag & NBIOT_SET_RESID )
+        {
+            dev->notify_ack_func( uri->objid,
+                                  uri->instid,
+                                  uri->resid,
+                                  node->data,
+                                  ack );
+        }
+        else if ( uri->flag & NBIOT_SET_OBJID )
+        {
+            uint16_t *id;
+            nbiot_uri_t tmp[1];
+
+            *tmp = *uri;
+            if ( tmp->flag & NBIOT_SET_INSTID )
+            {
+                id = &tmp->resid;
+                tmp->flag |= NBIOT_SET_RESID;
+            }
+            else
+            {
+                id = &tmp->instid;
+                tmp->flag |= NBIOT_SET_INSTID;
+            }
+
+            while ( buffer_len )
+            {
+                int ret;
+                size_t value_len;
+                nbiot_node_t *child;
+                const uint8_t *value;
+
+                ret = nbiot_tlv_decode( buffer,
+                                        buffer_len,
+                                        NULL,
+                                        id,
+                                        &value,
+                                        &value_len );
+                if ( ret )
+                {
+                    child = (nbiot_node_t*)NBIOT_LIST_GET( node->data, *id );
+                    if ( !child )
+                    {
+                        break;
+                    }
+
+                    buffer += ret;
+                    buffer_len -= ret;
+                    do_notify_ack( dev,
+                                   value,
+                                   value_len,
+                                   ack,
+                                   tmp );
+                }
+            }
+        }
+    }
+}
+
+static void notify_ack( nbiot_device_t    *dev,
+                        const uint8_t     *buffer,
+                        size_t             buffer_len,
+                        bool               ack,
+                        const nbiot_uri_t *uri )
+{
+    if ( dev->notify_ack_func )
+    {
+        uint16_t payload_len = 0;
+        const uint8_t *payload = NULL;
+
+        if ( coap_payload(buffer,
+                          buffer_len,
+                          &payload,
+                          &payload_len) )
+        {
+            do_notify_ack( dev,
+                           payload,
+                           payload_len,
+                           ack,
+                           uri );
+        }
+    }
+}
+#endif
+
+static void observe_read( nbiot_device_t    *dev,
+                          nbiot_observe_t   *observe,
+                          nbiot_node_t      *node,
+                          const nbiot_uri_t *uri,
+                          uint8_t           *buffer,
+                          size_t             buffer_len )
 {
     do
     {
@@ -178,12 +273,21 @@ static void observe_read( nbiot_device_t  *dev,
         observe->lasttime = nbiot_time();
         observe->lastmid = dev->next_mid++;
 
+#ifdef NOTIFY_ACK
+        ret = coap_init_header( coap,
+                                COAP_TYPE_CON,
+                                COAP_CONTENT_205,
+                                observe->lastmid,
+                                observe->token,
+                                observe->token_len );
+#else
         ret = coap_init_header( coap,
                                 COAP_TYPE_NON,
                                 COAP_CONTENT_205,
                                 observe->lastmid,
                                 observe->token,
                                 observe->token_len );
+#endif
         if ( ret )
         {
             break;
@@ -211,7 +315,7 @@ static void observe_read( nbiot_device_t  *dev,
         }
 
         ret = nbiot_node_read( node,
-                               flag,
+                               uri->flag,
                                coap->buffer + coap->offset,
                                coap->size - coap->offset,
                                true );
@@ -229,6 +333,13 @@ static void observe_read( nbiot_device_t  *dev,
                            dev->server,
                            coap->buffer,
                            coap->offset );
+#ifdef NOTIFY_ACK
+        nbiot_transaction_add( dev,
+                               coap->buffer,
+                               coap->offset,
+                               notify_ack,
+                               uri );
+#endif
     } while(0);
 }
 
@@ -305,7 +416,7 @@ void nbiot_observe_step( nbiot_device_t *dev,
                         observe_read( dev,
                                       res,
                                       node,
-                                      uri->flag,
+                                      uri,
                                       buffer,
                                       buffer_len );
                     }
@@ -322,7 +433,7 @@ void nbiot_observe_step( nbiot_device_t *dev,
                     observe_read( dev,
                                   inst,
                                   node,
-                                  uri->flag,
+                                  uri,
                                   buffer,
                                   buffer_len );
                 }
@@ -339,7 +450,7 @@ void nbiot_observe_step( nbiot_device_t *dev,
                 observe_read( dev,
                               obj,
                               node,
-                              uri->flag,
+                              uri,
                               buffer,
                               buffer_len );
             }

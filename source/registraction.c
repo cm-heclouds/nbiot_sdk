@@ -270,9 +270,18 @@ static int nbiot_register( nbiot_device_t *dev,
     return offset;
 }
 
+#ifdef NOTIFY_ACK
+static void registraction_reply( nbiot_device_t    *dev,
+                                 const uint8_t     *buffer,
+                                 size_t             buffer_len,
+                                 bool               ack,
+                                 const nbiot_uri_t *uri )
+#else
 static void registraction_reply( nbiot_device_t *dev,
                                  const uint8_t  *buffer,
-                                 size_t          buffer_len )
+                                 size_t          buffer_len,
+                                 bool            ack )
+#endif
 {
     if ( dev->state == STATE_REG_PENDING )
     {
@@ -372,18 +381,35 @@ int nbiot_register_start( nbiot_device_t *dev,
         }
 
         dev->state = STATE_REG_PENDING;
+#ifdef NOTIFY_ACK
+        nbiot_transaction_add( dev,
+                               buffer,
+                               buffer_len,
+                               registraction_reply,
+                               NULL );
+#else
         nbiot_transaction_add( dev,
                                buffer,
                                buffer_len,
                                registraction_reply );
+#endif
     }
 
     return COAP_NO_ERROR;
 }
 
+#ifdef NOTIFY_ACK
+static void registraction_update_reply( nbiot_device_t    *dev,
+                                        const uint8_t     *buffer,
+                                        size_t             buffer_len,
+                                        bool               ack,
+                                        const nbiot_uri_t *uri )
+#else
 static void registraction_update_reply( nbiot_device_t *dev,
                                         const uint8_t  *buffer,
-                                        size_t          buffer_len )
+                                        size_t          buffer_len,
+                                        bool            ack )
+#endif
 {
     if ( dev->state == STATE_REG_UPDATE_PENDING )
     {
@@ -428,19 +454,36 @@ int nbiot_register_update( nbiot_device_t *dev,
             return COAP_INTERNAL_SERVER_ERROR_500;
         }
 
+#ifdef NOTIFY_ACK
+        nbiot_transaction_add( dev,
+                               buffer,
+                               buffer_len,
+                               registraction_update_reply,
+                               NULL );
+#else
         nbiot_transaction_add( dev,
                                buffer,
                                buffer_len,
                                registraction_update_reply );
+#endif
         dev->state = STATE_REG_UPDATE_PENDING;
     }
 
     return COAP_NO_ERROR;
 }
 
+#ifdef NOTIFY_ACK
+static void deregister_reply( nbiot_device_t    *dev,
+                              const uint8_t     *buffer,
+                              size_t             buffer_len,
+                              bool               ack,
+                              const nbiot_uri_t *uri )
+#else
 static void deregister_reply( nbiot_device_t *dev,
                               const uint8_t  *buffer,
-                              size_t          buffer_len )
+                              size_t          buffer_len,
+                              bool            ack )
+#endif
 {
     if ( dev->state == STATE_DEREG_PENDING )
     {
@@ -477,10 +520,18 @@ int nbiot_deregister( nbiot_device_t *dev,
             return COAP_INTERNAL_SERVER_ERROR_500;
         }
 
+#ifdef NOTIFY_ACK
+        nbiot_transaction_add( dev,
+                               buffer,
+                               buffer_len,
+                               deregister_reply,
+                               NULL );
+#else
         nbiot_transaction_add( dev,
                                buffer,
                                buffer_len,
                                deregister_reply );
+#endif
         dev->state = STATE_DEREG_PENDING;
     }
 

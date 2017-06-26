@@ -5,10 +5,18 @@
 
 #include "internal.h"
 
+#ifdef NOTIFY_ACK
+int nbiot_transaction_add( nbiot_device_t              *dev,
+                           const uint8_t               *buffer,
+                           size_t                       buffer_len,
+                           nbiot_transaction_callback_t callback,
+                           const nbiot_uri_t           *uri )
+#else
 int nbiot_transaction_add( nbiot_device_t              *dev,
                            const uint8_t               *buffer,
                            size_t                       buffer_len,
                            nbiot_transaction_callback_t callback )
+#endif
 {
     uint8_t *temp;
     nbiot_transaction_t *transaction;
@@ -33,6 +41,12 @@ int nbiot_transaction_add( nbiot_device_t              *dev,
     transaction->buffer = temp;
     transaction->buffer_len = buffer_len;
     transaction->callback = callback;
+#ifdef NOTIFY_ACK
+    if ( uri )
+    {
+        *transaction->uri = *uri;
+    }
+#endif
     dev->transactions = (nbiot_transaction_t*)NBIOT_LIST_ADD( dev->transactions, transaction );
 
     return NBIOT_ERR_OK;
@@ -57,7 +71,29 @@ int nbiot_transaction_del( nbiot_device_t *dev,
          buffer_len &&
          transaction->callback )
     {
-        transaction->callback( dev, buffer, buffer_len );
+#ifdef NOTIFY_ACK
+        if ( transaction->uri->flag )
+        {
+            transaction->callback( dev,
+                                   transaction->buffer,
+                                   transaction->buffer_len,
+                                   transaction->ack,
+                                   transaction->uri );
+        }
+        else
+        {
+            transaction->callback( dev,
+                                   buffer,
+                                   buffer_len,
+                                   transaction->ack,
+                                   transaction->uri );
+        }
+#else
+        transaction->callback( dev,
+                               buffer,
+                               buffer_len,
+                               transaction->ack );
+#endif
     }
 
     nbiot_free( transaction->buffer );

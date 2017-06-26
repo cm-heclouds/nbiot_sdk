@@ -184,38 +184,48 @@ typedef struct _nbiot_observe_t
     bool                     active;
 } nbiot_observe_t;
 
-typedef void(*nbiot_transaction_callback_t)(nbiot_device_t*,const uint8_t*,size_t);
+#ifdef NOTIFY_ACK
+typedef void(*nbiot_transaction_callback_t)(nbiot_device_t*,const uint8_t*,size_t,bool,const nbiot_uri_t*);
+#else
+typedef void(*nbiot_transaction_callback_t)(nbiot_device_t*,const uint8_t*,size_t,bool);
+#endif
 typedef struct _nbiot_transaction_t
 {
     struct _nbiot_transaction_t *next;
     uint16_t                     mid;
-    uint8_t                      ack;
+    bool                         ack;
     uint8_t                      counter;
     time_t                       timeout;
     time_t                       time;
     uint8_t                     *buffer;
     size_t                       buffer_len;
     nbiot_transaction_callback_t callback;
+#ifdef NOTIFY_ACK
+    nbiot_uri_t                  uri[1];
+#endif
 } nbiot_transaction_t;
 
 struct _nbiot_device_t
 {
-    uint16_t                 next_mid;
-    uint8_t                  state;
-    int                      life_time;
-    time_t                   registraction;
-    const char              *endpoint_name;
-    nbiot_sockaddr_t        *server;        /* server address */
-    nbiot_socket_t          *socket;        /* client socket */
-    nbiot_sockaddr_t        *address;       /* temporary address */
-    nbiot_node_t            *nodes;
-    nbiot_observe_t         *observes;
+    uint16_t                    next_mid;
+    uint8_t                     state;
+    int                         life_time;
+    time_t                      registraction;
+    const char                 *endpoint_name;
+    nbiot_sockaddr_t           *server;        /* server address */
+    nbiot_socket_t             *socket;        /* client socket */
+    nbiot_sockaddr_t           *address;       /* temporary address */
+    nbiot_node_t               *nodes;
+    nbiot_observe_t            *observes;
 #ifdef NBIOT_LOCATION
-    nbiot_location_t        *locations;
+    nbiot_location_t           *locations;
 #endif
-    nbiot_transaction_t     *transactions;
-    nbiot_write_callback_t   write_func;
-    nbiot_execute_callback_t execute_func;
+    nbiot_transaction_t        *transactions;
+    nbiot_write_callback_t      write_func;
+    nbiot_execute_callback_t    execute_func;
+#ifdef NOTIFY_ACK
+    nbiot_notify_ack_callback_t notify_ack_func;
+#endif
 };
 
 /**
@@ -269,10 +279,18 @@ void nbiot_register_step( nbiot_device_t *dev,
 /**
  * transaction.c
 **/
+#ifdef NOTIFY_ACK
+int nbiot_transaction_add( nbiot_device_t              *dev,
+                           const uint8_t               *buffer,
+                           size_t                       buffer_len,
+                           nbiot_transaction_callback_t callback,
+                           const nbiot_uri_t           *uri );
+#else
 int nbiot_transaction_add( nbiot_device_t              *dev,
                            const uint8_t               *buffer,
                            size_t                       buffer_len,
                            nbiot_transaction_callback_t callback );
+#endif
 int nbiot_transaction_del( nbiot_device_t *dev,
                            uint16_t        mid,
                            const uint8_t  *buffer,
@@ -295,10 +313,6 @@ void nbiot_observe_step( nbiot_device_t *dev,
                          time_t          now,
                          uint8_t        *buffer,
                          size_t          buffer_len );
-
-/**
- * nbiot.c
-**/
 
 #ifdef __cplusplus
 } /* extern "C"{ */

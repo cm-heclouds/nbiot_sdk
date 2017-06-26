@@ -51,6 +51,21 @@ void execute_callback( uint16_t       objid,
     nbiot_buffer_printf( buff, size );
 }
 
+#ifdef NOTIFY_ACK
+void notify_ack_callback( uint16_t       objid,
+                          uint16_t       instid,
+                          uint16_t       resid,
+                          nbiot_value_t *data,
+                          bool           ack )
+{
+    nbiot_printf( "notify ack /%d/%d/%d(%s)\r\n",
+                  objid,
+                  instid,
+                  resid,
+                  ack ? "true":"false" );
+}
+#endif
+
 int main( int argc, char *argv[] )
 {
     int life_time = 300;
@@ -153,12 +168,22 @@ int main( int argc, char *argv[] )
         nbiot_value_t at;   /* ipso digital input - application type */
         nbiot_device_t *dev = NULL;
 
+#ifdef NOTIFY_ACK
+        ret = nbiot_device_create( &dev,
+                                   endpoint_name,
+                                   life_time,
+                                   port,
+                                   write_callback,
+                                   execute_callback,
+                                   notify_ack_callback );
+#else
         ret = nbiot_device_create( &dev,
                                    endpoint_name,
                                    life_time,
                                    port,
                                    write_callback,
                                    execute_callback );
+#endif
         if ( ret )
         {
             nbiot_printf( "device create failed, code = %d.\r\n", ret );
