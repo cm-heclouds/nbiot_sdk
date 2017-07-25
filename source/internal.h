@@ -192,6 +192,7 @@ struct _nbiot_device_t
 **/
 int nbiot_node_read( nbiot_node_t *node,
                      uint8_t       flag,
+                     uint8_t       src_flag,
                      uint8_t      *buffer,
                      size_t        buffer_len,
                      bool          updated );

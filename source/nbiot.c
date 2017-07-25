@@ -174,7 +174,6 @@ static void handle_observe( nbiot_device_t    *dev,
 {
     do
     {
-        int ret;
         nbiot_node_t *node;
         nbiot_observe_t *tmp;
 

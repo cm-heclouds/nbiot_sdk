@@ -170,15 +170,17 @@ int nbiot_observe_read( nbiot_device_t    *dev,
     /* read */
     len = nbiot_node_read( node,
                            uri->flag,
+                           uri->flag,
                            coap->buffer + coap->offset,
                            coap->size - coap->offset,
                            update );
-    if ( len )
+    if ( len > 0 )
     {
         coap->offset += len;
     }
     else
     {
+        coap->offset--;
         return COAP_INTERNAL_SERVER_ERROR_500;
     }
 
