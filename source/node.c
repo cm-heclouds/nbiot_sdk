@@ -150,12 +150,12 @@ int nbiot_node_read( nbiot_node_t *node,
             {
                 if ( buffer )
                 {
-                    nbiot_tlv_encode( buffer + num,
-                                      buffer_len - num,
-                                      type,
-                                      node->id,
-                                      NULL,
-                                      len );
+                    ret = nbiot_tlv_encode( buffer + num,
+                                            buffer_len - num,
+                                            type,
+                                            node->id,
+                                            NULL,
+                                            len );
                     nbiot_node_read( node,
                                      flag,
                                      src_flag,
