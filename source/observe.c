@@ -316,10 +316,11 @@ static void observe_read( nbiot_device_t    *dev,
 
         ret = nbiot_node_read( node,
                                uri->flag,
+                               uri->flag,
                                coap->buffer + coap->offset,
                                coap->size - coap->offset,
                                true );
-        if ( ret )
+        if ( ret > 0 )
         {
             coap->offset += ret;
         }

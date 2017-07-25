@@ -233,6 +233,7 @@ static void handle_read( nbiot_device_t    *dev,
         coap->buffer[coap->offset++] = 0xff;
         ret = nbiot_node_read( node,
                                uri->flag,
+                               uri->flag,
                                coap->buffer + coap->offset,
                                coap->size - coap->offset,
                                false );
@@ -416,6 +417,7 @@ static void handle_observe( nbiot_device_t    *dev,
     } while (0);
 }
 
+#ifdef NBIOT_BOOTSTRAP
 static void handle_bootstrap( nbiot_device_t    *dev,
                               const nbiot_uri_t *uri,
                               coap_t            *coap,
@@ -486,6 +488,7 @@ static void handle_bootstrap( nbiot_device_t    *dev,
         }
     } while (0);
 }
+#endif
 
 static void handle_request( nbiot_device_t    *dev,
                             uint16_t           code,

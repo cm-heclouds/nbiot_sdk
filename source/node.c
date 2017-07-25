@@ -7,6 +7,7 @@
 
 int nbiot_node_read( nbiot_node_t *node,
                      uint8_t       flag,
+                     uint8_t       src_flag,
                      uint8_t      *buffer,
                      size_t        buffer_len,
                      bool          updated )
@@ -76,13 +77,39 @@ int nbiot_node_read( nbiot_node_t *node,
                 value_len = data->value.as_buf.len;
             }
 
-            if ( value &&
-                 value_len <= buffer_len )
+            if ( !value || value_len > buffer_len )
             {
-                data->flag &= ~NBIOT_UPDATED;
-                nbiot_memmove( buffer,
-                               value,
-                               value_len );
+                return 0;
+            }
+
+            if ( (src_flag&NBIOT_SET_RESID) &&
+                 nbiot_tlv_length(0,value_len) > buffer_len )
+            {
+                return 0;
+            }
+
+            if ( buffer )
+            {
+                if ( updated )
+                {
+                    data->flag &= ~NBIOT_UPDATED;
+                }
+
+                if ( src_flag & NBIOT_SET_RESID )
+                {
+                    value_len = nbiot_tlv_encode( buffer,
+                                                  buffer_len,
+                                                  TLV_TYPE_RESOURCE_INSTANCE,
+                                                  0,
+                                                  value,
+                                                  value_len );
+                }
+                else
+                {
+                    nbiot_memmove( buffer,
+                                   value,
+                                   value_len );
+                }
             }
 
             return value_len;
@@ -93,6 +120,7 @@ int nbiot_node_read( nbiot_node_t *node,
         int len;
         int ret = 0;
         int num = 0;
+        int tmp = 0;
         uint8_t type;
 
         if ( flag & NBIOT_SET_INSTID )
@@ -110,32 +138,33 @@ int nbiot_node_read( nbiot_node_t *node,
               node != NULL;
               node = node->next )
         {
-            len = nbiot_node_read( node, flag, NULL, 0, updated );
-            if ( len )
+            len = nbiot_node_read( node,
+                                   flag,
+                                   src_flag,
+                                   NULL,
+                                   SIZE_MAX,
+                                   updated );
+
+            tmp = nbiot_tlv_length( node->id, len );
+            if ( tmp <= buffer_len )
             {
                 if ( buffer )
                 {
-                    ret = nbiot_tlv_encode( buffer + num,
-                                            buffer_len - num,
-                                            type,
-                                            node->id,
-                                            NULL,
-                                            len );
-                    if ( ret )
-                    {
-                        ret += nbiot_node_read( node,
-                                                flag,
-                                                buffer + num + ret,
-                                                buffer_len - num - ret,
-                                                updated );
-                    }
+                    nbiot_tlv_encode( buffer + num,
+                                      buffer_len - num,
+                                      type,
+                                      node->id,
+                                      NULL,
+                                      len );
+                    nbiot_node_read( node,
+                                     flag,
+                                     src_flag,
+                                     buffer + num + ret,
+                                     buffer_len - num - ret,
+                                     updated );
                 }
 
-                len = nbiot_tlv_length( node->id, len );
-                if ( !buffer || len == ret )
-                {
-                    num += len;
-                }
+                num += tmp;
             }
         }
 
