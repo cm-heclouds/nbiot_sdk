@@ -174,6 +174,7 @@ static void handle_observe( nbiot_device_t    *dev,
 {
     do
     {
+        int ret;
         nbiot_node_t *node;
         nbiot_observe_t *tmp;
 
@@ -206,15 +207,12 @@ static void handle_observe( nbiot_device_t    *dev,
             coap_set_code( coap, COAP_CONTENT_205 );
         }
 
-        /* fix: observe的ACK不携带设备数据 */
-        /*
         ret = nbiot_observe_read( dev,
                                   uri,
                                   tmp,
                                   coap,
                                   false );
         coap_set_code( coap, ret );
-        */
     } while (0);
 }
 
