@@ -404,8 +404,6 @@ static void handle_observe( nbiot_device_t    *dev,
             break;
         }
 
-        /* fix: observe的ACK不携带设备数据 */
-        /*
         if (coap_add_content_type(coap, LWM2M_CONTENT_TLV))
         {
             coap_set_code(coap, COAP_INTERNAL_SERVER_ERROR_500);
@@ -413,7 +411,6 @@ static void handle_observe( nbiot_device_t    *dev,
         }
 
         handle_read( dev, uri, coap );
-        */
     } while (0);
 }
 

@@ -90,11 +90,7 @@ int nbiot_node_read( nbiot_node_t *node,
 
             if ( buffer )
             {
-                if ( updated )
-                {
-                    data->flag &= ~NBIOT_UPDATED;
-                }
-
+                data->flag &= ~NBIOT_UPDATED;
                 if ( src_flag & NBIOT_SET_RESID )
                 {
                     value_len = nbiot_tlv_encode( buffer,
