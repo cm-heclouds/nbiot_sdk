@@ -374,12 +374,12 @@ static void handle_observe( nbiot_device_t    *dev,
                             const nbiot_uri_t *uri,
                             coap_t            *coap,
                             const uint8_t     *token,
-                            uint8_t            token_len )
+                            uint8_t            token_len,
+                            bool               cancel )
 {
     do
     {
         nbiot_node_t *node;
-        nbiot_observe_t *tmp;
 
         node = nbiot_node_find( dev, uri );
         if ( !node )
@@ -388,20 +388,32 @@ static void handle_observe( nbiot_device_t    *dev,
             break;
         }
 
-        tmp = nbiot_observe_add( dev,
-                                 uri,
-                                 token,
-                                 token_len );
-        if ( !tmp )
+        if ( !cancel )
         {
-            coap_set_code( coap, COAP_BAD_REQUEST_400 );
-            break;
-        }
+            nbiot_observe_t *obs = nbiot_observe_add( dev,
+                                                      uri,
+                                                      token,
+                                                      token_len );
+            if ( !obs )
+            {
+                coap_set_code( coap, COAP_BAD_REQUEST_400 );
+                break;
+            }
 
-        if ( coap_add_observe(coap,tmp->counter++) )
+            if ( coap_add_observe(coap,obs->counter++) )
+            {
+                coap_set_code( coap, COAP_INTERNAL_SERVER_ERROR_500 );
+                break;
+            }
+        }
+        else
         {
-            coap_set_code( coap, COAP_INTERNAL_SERVER_ERROR_500 );
-            break;
+            int ret = nbiot_observe_del( dev, uri );
+            if ( COAP_CONTENT_205 != ret )
+            {
+                coap_set_code( coap, ret );
+                break;
+            }
         }
 
         if (coap_add_content_type(coap, LWM2M_CONTENT_TLV))
@@ -560,14 +572,24 @@ static void handle_request( nbiot_device_t    *dev,
             if ( observe == 0 )
             {
                 /* observe */
-                handle_observe( dev, uri, coap, token, token_len );
+                handle_observe( dev,
+                                uri,
+                                coap,
+                                token,
+                                token_len,
+                                false );
                 break;
             }
 
             if ( observe == 1 )
             {
                 /* cancel observe */
-                coap_set_code( coap, nbiot_observe_del(dev,uri) );
+                handle_observe( dev,
+                                uri,
+                                coap,
+                                token,
+                                token_len,
+                                true );
                 break;
             }
 
